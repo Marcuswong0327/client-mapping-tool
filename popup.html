@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Client Mapping Tool</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>Client Mapping Tool</h2>
+        </div>
+
+        <!-- Tool Navigation -->
+        <div class="tool-nav">
+            <button class="tool-btn active" data-tool="copy-urls">Copy URLs</button>
+            <button class="tool-btn" data-tool="job-extractor">Job Extractor</button>
+            <button class="tool-btn" data-tool="data-enricher">Data Enricher</button>
+        </div>
+
+        <!-- Copy URLs Tool -->
+        <div id="copy-urls-tool" class="tool-section active">
+            <div class="section-header">
+                <h3>Copy URLs Tool</h3>
+                <p class="section-description">Copy all URLs from tabs in the current window</p>
+            </div>
+
+            <div class="input-section">
+                <label for="urlsTextarea">URLs (one per line):</label>
+                <textarea id="urlsTextarea" rows="8"
+                    placeholder="URLs from all tabs will appear here after copying..."></textarea>
+            </div>
+
+            <div class="button-section">
+                <button id="copyUrlsBtn" class="extract-btn">Copy URLs</button>
+                <button id="pasteUrlsBtn" class="export-btn">Open URLs</button>
+            </div>
+
+            <div class="status-section">
+                <div id="copyStatus" class="status-message">Ready</div>
+            </div>
+        </div>
+
+        <!-- Job Data Extractor Tool -->
+        <div id="job-extractor-tool" class="tool-section">
+            <div class="section-header">
+                <h3>Job Data Extractor</h3>
+                <p class="section-description">Extract job data from Seek (single or multiple URLs)</p>
+            </div>
+
+            <div class="input-section">
+                <label for="jobUrl">Job Search URL:</label>
+                <input type="url" id="jobUrl" placeholder="https://www.seek.com.au/linktal-jobs-intern/" />
+            </div>
+
+            <div class="status-section">
+                <div id="status" class="status-message">Click to start extracting</div>
+                <div id="progress" class="progress-bar">
+                    <div id="progressFill" class="progress-fill"></div>
+                </div>
+            </div>
+
+            <div class="button-section">
+                <button id="extractBtn" class="extract-btn">Extract Jobs</button>
+                <button id="exportBtn" class="export-btn" disabled>Export to Excel</button>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="multi-url-section">
+                <div class="section-header">
+                    <h3>Multi-URL Extraction</h3>
+                    <p class="section-description">Extract data from multiple job listing URLs</p>
+                </div>
+
+                <div class="input-section">
+                    <label for="multiUrls">Job Listing URLs (one per line):</label>
+                    <textarea id="multiUrls" rows="6" placeholder="https://www.seek.com.au/job/intern_1
+https://www.seek.com.au/job/intern_2
+https://www.seek.com.au/job/intern_3"></textarea>
+                </div>
+
+                <div class="status-section">
+                    <div id="multiStatus" class="status-message">Ready to extract</div>
+                    <div id="multiProgress" class="progress-bar">
+                        <div id="multiProgressFill" class="progress-fill"></div>
+                    </div>
+                    <div id="multiDetails" class="progress-details"></div>
+                </div>
+
+                <div class="button-section">
+                    <button id="multiExtractBtn" class="extract-btn">Extract from URLs</button>
+                    <button id="copyPasteUrlsBtn" class="export-btn">Copy Paste URLs</button>
+                </div>
+
+                <div id="errorPreviewSection" class="error-preview-section" style="display: none;">
+                    <button id="errorToggleBtn" class="error-toggle-btn">
+                        <span id="errorToggleIcon">▼</span>
+                        <span id="errorToggleText">Show Failed URLs</span>
+                    </button>
+
+                    <div id="errorPreviewContent" class="error-preview-content" style="display: none;">
+                        <div class="error-preview-header">
+                            <span id="errorCount" class="error-count-text"></span>
+                            <button id="copyErrorUrlsBtn" class="copy-urls-btn">Copy All URLs</button>
+                        </div>
+                        <div id="errorList" class="error-list"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Enricher Tool -->
+        <div id="data-enricher-tool" class="tool-section">
+            <div class="section-header">
+                <h3>Data Enricher</h3>
+                <p class="section-description">Enrich LinkedIn profiles with Apollo and Findymail</p>
+            </div>
+
+            <div class="input-section">
+                <label for="apolloApiKey">Apollo API Key:</label>
+                <input type="password" id="apolloApiKey" placeholder="Enter Apollo API Key" />
+            </div>
+
+            <div class="input-section">
+                <label for="findymailApiKey">Findymail API Key:</label>
+                <input type="password" id="findymailApiKey" placeholder="Enter Findymail API Key" />
+            </div>
+
+            <div class="input-section">
+                <label for="linkedinUrls">LinkedIn URLs (one per line):</label>
+                <textarea id="linkedinUrls" rows="8" placeholder="https://www.linkedin.com/in/intern1
+https://www.linkedin.com/in/intern2
+https://www.linkedin.com/in/intern3"></textarea>
+            </div>
+
+            <div class="status-section">
+                <div id="enrichment-status" class="status-message">Ready to enrich</div>
+                <progress id="enrichment-progress" class="progress-bar" value="0" max="100"></progress>
+                <div id="enrichment-stats" class="progress-details"></div>
+            </div>
+
+            <div class="button-section">
+                <button id="enrichBtn" class="extract-btn">Start Enrichment</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="popup.js"></script>
+    <script src="enrich.js"></script>
+</body>
+
+</html>
