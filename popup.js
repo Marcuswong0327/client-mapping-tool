@@ -1,3 +1,5 @@
+import { AZURE_CONFIGURATION } from "./config";
+
 document.addEventListener('DOMContentLoaded', function () {
     // Tool Navigation
     const toolBtns = document.querySelectorAll('.tool-btn');
@@ -17,9 +19,8 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // ============================================================================
+   
     // COPY URLs TOOL
-    // ============================================================================
     const urlsTextarea = document.getElementById('urlsTextarea');
     const copyUrlsBtn = document.getElementById('copyUrlsBtn');
     const pasteUrlsBtn = document.getElementById('pasteUrlsBtn');
@@ -468,39 +469,17 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // ============================================================================
-    // AZURE AD + MICROSOFT GRAPH INTEGRATION FOR MASTER SHEET
-    // ============================================================================
-
-    const AZURE_CONFIG = {
-        // TODO: Replace with your Azure AD application (client) ID
-        clientId: 'f364e998-64e5-42c0-be42-e4861e3bfa86',
-        // Use 'common' for multi-tenant or your specific tenant ID
-        tenant: 'common',
-        scopes: [
-            'openid',
-            'profile',
-            'offline_access',
-            'Files.Read.All'
-        ],
-        // OneDrive/SharePoint sharing link for the master workbook
-        masterShareLink: 'https://netorgft10532378-my.sharepoint.com/:x:/g/personal/chen_yu_linktal_com_au/IQBcIZlVkGwKRYGb-uWqfND6Ab2PWqvSXRvSoJPhMYQ8MOg?e=h5LyRf'
-    };
-
-    function getAzureRedirectUri() {
-        // This returns https://<extension-id>.chromiumapp.org/ which must be configured in Azure
-        return chrome.identity.getRedirectURL();
-    }
+    // AZURE + MICROSOFT GRAPH INTEGRATION FOR MASTER SHEET
 
     function buildAzureAuthUrl() {
         const params = new URLSearchParams({
-            client_id: AZURE_CONFIG.clientId,
+            client_id: AZURE_CONFIGURATION.clientId,
             response_type: 'token',
-            redirect_uri: getAzureRedirectUri(),
-            scope: AZURE_CONFIG.scopes.join(' '),
+            redirect_uri: chrome.identity.getRedirectURL(),
+            scope: AZURE_CONFIGURATION.scopes.join(' '),
             response_mode: 'fragment'
         });
-        return `https://login.microsoftonline.com/${AZURE_CONFIG.tenant}/oauth2/v2.0/authorize?${params.toString()}`;
+        return `https://login.microsoftonline.com/${AZURE_CONFIGURATION.tenant}/oauth2/v2.0/authorize?${params.toString()}`;
     }
 
     function getAzureAccessToken() {
@@ -521,13 +500,19 @@ document.addEventListener('DOMContentLoaded', function () {
                         return;
                     }
 
-                    const hash = redirectUrl.split('#')[1] || '';
-                    const params = new URLSearchParams(hash);
+                    const token = redirectUrl.split('#')[1] || ''; //EXTRACT the token (ID token/access token)
+                    const params = new URLSearchParams(token);
                     const accessToken = params.get('access_token');
+                    const IdToken = params.get('id_token');
+                    //const refreshToken = params.get('refresh_token'); only return 
 
                     if (!accessToken) {
                         reject(new Error('No access token returned from Azure'));
                         return;
+                    }
+
+                    if(! IdToken ){
+                        reject(new Error('No ID Token returned from Azure'));
                     }
 
                     resolve(accessToken);
