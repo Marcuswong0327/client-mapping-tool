@@ -1,16 +1,21 @@
+
 async function processLinkedInUrls(urls, apolloKey, findymailKey) {
+
     const statusEl = document.getElementById('enrichment-status');
     const progressEl = document.getElementById('enrichment-progress');
 
-    // Clean URLs - only allow LinkedIn URLs
+    // Function to validate LinkedIn person profile URL
+    function isValidLinkedInProfileUrl(url) {
+        if (!url || url === 'N/A' || !url.startsWith('http')) {
+            return false;
+        }
+        return url.includes('linkedin.com/in/');
+    }
+
+    // Clean URLs - only allow LinkedIn person profile URLs
     const urlList = urls.split(/[\n,]/)
         .map(u => u.trim())
-        .filter(u => {
-            // Only allow LinkedIn profile URLs
-            return u.length > 0 &&
-                (u.includes('linkedin.com/in/')) &&
-                (u.startsWith('https://') || u.startsWith('http://') || u.startsWith('linkedin.com'));
-        })
+        .filter(u => isValidLinkedInProfileUrl(u))
         .map(u => {
             // Normalize URLs - ensure they have https://
             if (!u.startsWith('http://') && !u.startsWith('https://')) {
@@ -304,3 +309,4 @@ function exportToExcel(data) {
         }
     });
 }
+

@@ -717,7 +717,47 @@ document.addEventListener('DOMContentLoaded', function () {
     const apolloApiKeyInput = document.getElementById('apolloApiKey');
     const findymailApiKeyInput = document.getElementById('findymailApiKey');
     const linkedinUrlsInput = document.getElementById('linkedinUrls');
+    const enricherCopyPasteUrlsBtn = document.getElementById('enricherCopyPasteUrlsBtn');
     const enrichBtn = document.getElementById('enrichBtn');
+    const enrichmentStatusEl = document.getElementById('enrichment-status');
+
+    // Function to validate LinkedIn person profile URL
+    function isValidLinkedInProfileUrl(url) {
+        if (!url || url === 'N/A' || !url.startsWith('http')) {
+            return false;
+        }
+        return url.includes('linkedin.com/in/');
+    }
+
+    enricherCopyPasteUrlsBtn.addEventListener('click', async function () {
+        try {
+            const tabs = await chrome.tabs.query({ currentWindow: true });
+
+            if (tabs.length === 0) {
+                enrichmentStatusEl.textContent = 'No tabs found in current window';
+                enrichmentStatusEl.className = 'status-message error';
+                return;
+            }
+
+            const linkedInUrls = tabs
+                .map(tab => tab.url)
+                .filter(url => isValidLinkedInProfileUrl(url));
+
+            if (linkedInUrls.length === 0) {
+                enrichmentStatusEl.textContent = 'No LinkedIn profile URLs found in current tabs';
+                enrichmentStatusEl.className = 'status-message error';
+                return;
+            }
+
+            linkedinUrlsInput.value = linkedInUrls.join('\n');
+            updateLinkedInUrlCount();
+            enrichmentStatusEl.textContent = `Copied ${linkedInUrls.length} LinkedIn profile URL(s)`;
+            enrichmentStatusEl.className = 'status-message success';
+        } catch (error) {
+            enrichmentStatusEl.textContent = 'Error: ' + error.message;
+            enrichmentStatusEl.className = 'status-message error';
+        }
+    });
 
     // Load saved API keys
     chrome.storage.local.get(['apolloApiKey', 'findymailApiKey'], function (result) {

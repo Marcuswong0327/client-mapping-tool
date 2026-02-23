@@ -16,36 +16,14 @@
 
         <!-- Tool Navigation -->
         <div class="tool-nav">
-            <button class="tool-btn active" data-tool="copy-urls">Copy URLs</button>
-            <button class="tool-btn" data-tool="job-extractor">Job Extractor</button>
+            <button class="tool-btn active" data-tool="job-extractor">Job Extractor</button>
             <button class="tool-btn" data-tool="data-enricher">Data Enricher</button>
+            <button class="tool-btn" data-tool="copy-urls">Copy URLs</button>
         </div>
 
-        <!-- Copy URLs Tool -->
-        <div id="copy-urls-tool" class="tool-section active">
-            <div class="section-header">
-                <h3>Copy URLs Tool</h3>
-                <p class="section-description">Copy all URLs from tabs in the current window</p>
-            </div>
-
-            <div class="input-section">
-                <label for="urlsTextarea">URLs (one per line):</label>
-                <textarea id="urlsTextarea" rows="8"
-                    placeholder="URLs from all tabs will appear here after copying..."></textarea>
-            </div>
-
-            <div class="button-section">
-                <button id="copyUrlsBtn" class="extract-btn">Copy URLs</button>
-                <button id="pasteUrlsBtn" class="export-btn">Open URLs</button>
-            </div>
-
-            <div class="status-section">
-                <div id="copyStatus" class="status-message">Ready</div>
-            </div>
-        </div>
 
         <!-- Job Data Extractor Tool -->
-        <div id="job-extractor-tool" class="tool-section">
+        <div id="job-extractor-tool" class="tool-section active">
             <div class="section-header">
                 <h3>Job Data Extractor</h3>
                 <p class="section-description">Extract job data from Seek (single or multiple URLs)</p>
@@ -146,7 +124,30 @@ https://www.linkedin.com/in/consultant3"></textarea>
             </div>
 
             <div class="button-section">
+                <button id="enricherCopyPasteUrlsBtn" class="export-btn">Copy Paste URLs</button>
                 <button id="enrichBtn" class="extract-btn">Start Enrichment</button>
+            </div>
+        </div>
+        <!-- Copy URLs Tool -->
+        <div id="copy-urls-tool" class="tool-section">
+            <div class="section-header">
+                <h3>Copy URLs Tool</h3>
+                <p class="section-description">Copy all URLs from tabs in the current window</p>
+            </div>
+
+            <div class="input-section">
+                <label for="urlsTextarea">URLs (one per line):</label>
+                <textarea id="urlsTextarea" rows="8"
+                    placeholder="URLs from all tabs will appear here after copying..."></textarea>
+            </div>
+
+            <div class="button-section">
+                <button id="copyUrlsBtn" class="extract-btn">Copy URLs</button>
+                <button id="pasteUrlsBtn" class="export-btn">Open URLs</button>
+            </div>
+
+            <div class="status-section">
+                <div id="copyStatus" class="status-message">Ready</div>
             </div>
         </div>
     </div>
