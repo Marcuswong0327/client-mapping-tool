@@ -1,4 +1,3 @@
-import { AZURE_CONFIGURATION } from "./config";
 
 document.addEventListener('DOMContentLoaded', function () {
     // Tool Navigation
@@ -469,104 +468,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // AZURE + MICROSOFT GRAPH INTEGRATION FOR MASTER SHEET
-
-    function buildAzureAuthUrl() {
-        const params = new URLSearchParams({
-            client_id: AZURE_CONFIGURATION.clientId,
-            response_type: 'token',
-            redirect_uri: chrome.identity.getRedirectURL(),
-            scope: AZURE_CONFIGURATION.scopes.join(' '),
-            response_mode: 'fragment'
-        });
-        return `https://login.microsoftonline.com/${AZURE_CONFIGURATION.tenant}/oauth2/v2.0/authorize?${params.toString()}`;
-    }
-
-    function getAzureAccessToken() {
-        const authUrl = buildAzureAuthUrl();
-        return new Promise((resolve, reject) => {
-            chrome.identity.launchWebAuthFlow(
-                {
-                    url: authUrl,
-                    interactive: true
-                },
-                (redirectUrl) => {
-                    if (chrome.runtime.lastError) {
-                        reject(new Error(chrome.runtime.lastError.message));
-                        return;
-                    }
-                    if (!redirectUrl) {
-                        reject(new Error('Empty redirect URL from Azure'));
-                        return;
-                    }
-
-                    const token = redirectUrl.split('#')[1] || ''; //EXTRACT the token (ID token/access token)
-                    const params = new URLSearchParams(token);
-                    const accessToken = params.get('access_token');
-                    const IdToken = params.get('id_token');
-                    //const refreshToken = params.get('refresh_token'); only return 
-
-                    if (!accessToken) {
-                        reject(new Error('No access token returned from Azure'));
-                        return;
-                    }
-
-                    if(! IdToken ){
-                        reject(new Error('No ID Token returned from Azure'));
-                    }
-
-                    resolve(accessToken);
-                }
-            );
-        });
-    }
-
-    async function callGraph(path, method = 'GET', body = null, accessToken) {
-        const response = await fetch(`https://graph.microsoft.com/v1.0/${path}`, {
-            method,
-            headers: {
-                'Authorization': `Bearer ${accessToken}`,
-                'Content-Type': 'application/json'
-            },
-            body: body ? JSON.stringify(body) : undefined
-        });
-
-        if (!response.ok) {
-            const text = await response.text();
-            throw new Error(`Graph error ${response.status}: ${text}`);
-        }
-
-        return response.json();
-    }
-
-    function buildShareIdFromUrl(url) {
-        // Strip any query string (e.g. ?e=h5LyRf) so we use the stable part of the link
-        const cleanUrl = url.split('?')[0];
-        // Graph expects URL-safe base64 without padding, prefixed with "u!"
-        const base64 = btoa(cleanUrl).replace(/=+$/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-        return `u!${base64}`;
-    }
-
-    async function getMasterValuesFromOneDrive(accessToken) {
-        const shareId = encodeURIComponent(buildShareIdFromUrl(AZURE_CONFIG.masterShareLink));
-        const driveItem = await callGraph(`shares/${shareId}/driveItem`, 'GET', null, accessToken);
-
-        const driveId = driveItem.parentReference && driveItem.parentReference.driveId;
-        const itemId = driveItem.id;
-
-        if (!driveId || !itemId) {
-            throw new Error('Could not resolve drive item for master workbook');
-        }
-
-        const usedRange = await callGraph(
-            `drives/${driveId}/items/${itemId}/workbook/worksheets('Master')/usedRange(valuesOnly=true)`,
-            'GET',
-            null,
-            accessToken
-        );
-
-        return usedRange.values || [];
-    }
 
     function cleanCompanyNameForMatch(name) {
         if (!name) return '';
