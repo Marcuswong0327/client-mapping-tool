@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Client Mapping Tool",
-    "version": "1.0",
+    "version": "2.1",
     "description": "Client Mapping Tool with Copy URLs, Job Data Extractor, and Data Enricher tools.",
     "icons": {
         "16": "second_edition/CMT_icon_16.png",
@@ -13,18 +13,14 @@
         "storage",
         "downloads",
         "tabs",
-        "scripting",
-        "webRequest",
-        "identity"
+        "scripting"
     ],
     "host_permissions": [
         "*://*.talent.seek.com.au/*",
         "*://*.linkedin.com/*",
         "https://api.apollo.io/*",
         "https://app.findymail.com/*",
-        "https://www.seek.com.au/*",
-        "https://login.microsoftonline.com/*",
-        "https://graph.microsoft.com/*"
+        "https://www.seek.com.au/*"
     ],
     "action": {
         "default_popup": "popup.html",

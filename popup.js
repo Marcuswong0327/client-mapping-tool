@@ -18,98 +18,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-   
-    // COPY URLs TOOL
-    const urlsTextarea = document.getElementById('urlsTextarea');
-    const copyUrlsBtn = document.getElementById('copyUrlsBtn');
-    const pasteUrlsBtn = document.getElementById('pasteUrlsBtn');
-    const copyStatus = document.getElementById('copyStatus');
-
-    copyUrlsBtn.addEventListener('click', async function () {
-        try {
-            // Get all tabs in the current window
-            const tabs = await chrome.tabs.query({ currentWindow: true });
-
-            if (tabs.length === 0) {
-                copyStatus.textContent = 'No tabs found in current window';
-                copyStatus.className = 'status-message error';
-                return;
-            }
-
-            // Extract URLs from all tabs
-            const urls = tabs
-                .map(tab => tab.url)
-                .filter(url => url && (url.startsWith('http://') || url.startsWith('https://')));
-
-            if (urls.length === 0) {
-                copyStatus.textContent = 'No valid URLs found in tabs';
-                copyStatus.className = 'status-message error';
-                return;
-            }
-
-            urlsTextarea.value = urls.join('\n');
-            copyStatus.textContent = `Copied ${urls.length} URLs`;
-            copyStatus.className = 'status-message success';
-
-            // // Save to storage
-            // await chrome.storage.local.set({ copiedUrls: urlsTextarea.value });
-        } catch (error) {
-            copyStatus.textContent = 'Error: ' + error.message;
-            copyStatus.className = 'status-message error';
-        }
-    });
-
-    pasteUrlsBtn.addEventListener('click', async function () {
-        const urls = urlsTextarea.value.trim();
-        if (!urls) {
-            copyStatus.textContent = 'No URLs to paste';
-            copyStatus.className = 'status-message error';
-            return;
-        }
-
-        try {
-            const urlList = urls.split('\n')
-                .map(u => u.trim())
-                .filter(u => u.length > 0 && (u.startsWith('http://') || u.startsWith('https://')));
-
-            if (urlList.length === 0) {
-                copyStatus.textContent = 'No valid URLs to open';
-                copyStatus.className = 'status-message error';
-                return;
-            }
-
-            // Create a new window with all URLs
-            // First, create the window with the first URL
-            const newWindow = await chrome.windows.create({
-                url: urlList[0],
-                focused: true
-            });
-
-            // Then add remaining URLs as tabs in the new window
-            for (let i = 1; i < urlList.length; i++) {
-                await chrome.tabs.create({
-                    windowId: newWindow.id,
-                    url: urlList[i],
-                    active: false
-                });
-                // Small delay to avoid overwhelming the browser
-                await new Promise(resolve => setTimeout(resolve, 100));
-            }
-
-            copyStatus.textContent = `Opened ${urlList.length} URLs in new window`;
-            copyStatus.className = 'status-message success';
-        } catch (error) {
-            copyStatus.textContent = 'Error: ' + error.message;
-            copyStatus.className = 'status-message error';
-        }
-    });
-
-    // // Load saved URLs
-    // chrome.storage.local.get(['copiedUrls'], function (result) {
-    //     if (result.copiedUrls) {
-    //         urlsTextarea.value = result.copiedUrls;
-    //     }
-    // });
 
     // ============================================================================
     // JOB DATA EXTRACTOR TOOL
@@ -470,7 +378,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
     function cleanCompanyNameForMatch(name) {
-        if (!name) return '';
+        if (!name || name.length ===0 ) return '';
         let s = name.toUpperCase();
         s = s.replace(/[^A-Z0-9\s]/g, '');
 
@@ -497,22 +405,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const companyMap = new Map();
         let lastCompany = '';
-        let lastNature = '';
 
         for (let i = 1; i < masterValues.length; i++) {
             const row = masterValues[i];
             const rawCompany = row[mCol_Company];
-            const rawNature = row[mCol_Nature];
 
-            if (rawCompany && rawCompany.toString().trim() !== '') {
+            //Fill down logic 
+
+            if (rawCompany && rawCompany.toString().trim!=='') {
                 lastCompany = rawCompany.toString();
-            }
-
-            if (rawNature && rawNature.toString().trim() !== '') {
-                lastNature = rawNature.toString();
-            }
-
-            if (lastCompany) {
                 const cleanComp = cleanCompanyNameForMatch(lastCompany);
 
                 const stakeholder = {
@@ -550,7 +451,7 @@ document.addEventListener('DOMContentLoaded', function () {
             job.suburbs || '',
             job.jobTitle || '',
             job.company || '',
-            job.salary || '-',
+            job.salary || '',
             job.postedDate || '',
             job.contactEmail || '',
             job.url || ''
@@ -598,25 +499,24 @@ document.addEventListener('DOMContentLoaded', function () {
                 stakeholders.forEach(sh => {
                     const newRow = [...row];
                     newRow.push(
-                        sh.nature,
-                        sh.company,
-                        sh.suburb,
-                        sh.state,
-                        sh.job,
-                        sh.firstName,
-                        sh.fullName,
-                        sh.title,
-                        sh.email,
-                        sh.history1,
-                        sh.history2,
-                        sh.history3,
-                        sh.history4
+                        sh.nature ?? '',
+                        sh.company ?? '',
+                        sh.suburb ?? '',
+                        sh.state ?? '',
+                        sh.job ?? '',
+                        sh.firstName ?? '',
+                        sh.fullName ?? '',
+                        sh.title ?? '',
+                        sh.email ?? '',
+                        sh.history1 ?? '',
+                        sh.history2 ?? '',
+                        sh.history3 ?? '',
+                        sh.history4 ?? ''
                     );
                     outputData.push(newRow);
                 });
             } else {
                 const newRow = [...row];
-                newRow.push('', '', '', '', '', '', '', '', '', '', '', '', '');
                 outputData.push(newRow);
             }
         }
@@ -656,9 +556,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     async function exportJobsWithStakeholders(jobs) {
         try {
-            updateMultiStatus('Loading master data from OneDrive...', 'loading');
-            const accessToken = await getAzureAccessToken();
-            const masterValues = await getMasterValuesFromOneDrive(accessToken);
+            
+           
 
             if (!masterValues || masterValues.length === 0) {
                 throw new Error('Master sheet is empty or not accessible');
@@ -670,7 +569,7 @@ document.addEventListener('DOMContentLoaded', function () {
         } catch (error) {
             console.error('Stakeholder enrichment failed:', error);
             updateMultiStatus('Stakeholder enrichment failed, exported jobs only. ' + error.message, 'error');
-            exportMultiToExcel(jobs);
+            exportMultiToExcel(jobs); //even enrichment stakeholder info failed, still able to export original job listing data
         }
     }
 
@@ -681,7 +580,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         errorPreviewSection.style.display = 'block';
-        errorCount.textContent = `${errors.length} URL${errors.length > 1 ? 's' : ''} failed`;
+        errorCount.textContent = `${errors.length} URL(s) failed`;
         errorToggleText.textContent = 'Show Failed URLs';
 
         errorList.innerHTML = '';
@@ -705,7 +604,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
         const currentUrl = tabs[0].url;
-        if (currentUrl && (currentUrl.includes('seek.com'))) {
+        if (currentUrl && (currentUrl.includes('seek.com.au'))) {
             jobUrlInput.value = currentUrl;
             chrome.storage.local.set({ savedUrl: currentUrl });
         }
@@ -723,7 +622,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Function to validate LinkedIn person profile URL
     function isValidLinkedInProfileUrl(url) {
-        if (!url || url === 'N/A' || !url.startsWith('http')) {
+        if (!url || !url.startsWith('http')) {
             return false;
         }
         return url.includes('linkedin.com/in/');
@@ -741,7 +640,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const linkedInUrls = tabs
                 .map(tab => tab.url)
-                .filter(url => isValidLinkedInProfileUrl(url));
+                .filter(url => isValidLinkedInProfileUrl(url))
+                .map(url => {
+                    if(!url.startsWith('http://') && !url.startsWith('https://')){
+                        return 'https://' + url;
+                    }
+                }
+                );
 
             if (linkedInUrls.length === 0) {
                 enrichmentStatusEl.textContent = 'No LinkedIn profile URLs found in current tabs';
@@ -801,14 +706,10 @@ document.addEventListener('DOMContentLoaded', function () {
         // Auto-filter: keep only LinkedIn URLs in textarea
         if (urlList.length > 0) {
             const filteredText = urlList.join('\n');
-            if (filteredText !== text) {
-                linkedinUrlsInput.value = filteredText;
-                chrome.storage.local.set({ linkedinUrls: filteredText });
-            }
+            linkedinUrlsInput.value = filteredText;
+            chrome.storage.local.set({ linkedinUrls: filteredText });
+            
         }
-
-        linkedinUrlCount.textContent = `${urlList.length} LinkedIn URL${urlList.length !== 1 ? 's' : ''} detected`;
-        linkedinUrlCount.style.color = urlList.length > 0 ? '#28a745' : '#dc3545';
     }
 
     linkedinUrlsInput.addEventListener('input', function () {
@@ -825,31 +726,39 @@ document.addEventListener('DOMContentLoaded', function () {
     // });
 
     enrichBtn.addEventListener('click', async function () {
+
+        //Checking existence of apollo api, findymail api and linkedin URLs
+
         const apolloKey = apolloApiKeyInput.value.trim();
         const findymailKey = findymailApiKeyInput.value.trim();
         const urls = linkedinUrlsInput.value.trim();
 
         if (!apolloKey) {
-            document.getElementById('enrichment-status').textContent = 'Please enter Apollo API Key';
-            document.getElementById('enrichment-status').className = 'status-message error';
+            enrichmentStatusEl.textContent = 'Please enter Apollo API Key';
+            enrichmentStatusEl.className = 'status-message error';
             return;
         }
 
+        if(!findymailKey){
+            enrichmentStatusEl.textContent = 'Please enter Findymail API Key';
+            enrichmentStatusEl.className = 'status-message error';
+        }
+
         if (!urls) {
-            document.getElementById('enrichment-status').textContent = 'Please enter LinkedIn URLs';
-            document.getElementById('enrichment-status').className = 'status-message error';
+            enrichmentStatusEl.textContent = 'Please enter LinkedIn URLs';
+            enrichmentStatusEl.className = 'status-message error';
             return;
         }
 
         enrichBtn.disabled = true;
-        document.getElementById('enrichment-status').textContent = 'Starting enrichment...';
-        document.getElementById('enrichment-status').className = 'status-message loading';
+        enrichmentStatusEl.textContent = 'Starting enrichment...';
+        enrichmentStatusEl.className = 'status-message loading';
 
         try {
             await processLinkedInUrls(urls, apolloKey, findymailKey);
         } catch (error) {
-            document.getElementById('enrichment-status').textContent = 'Error: ' + error.message;
-            document.getElementById('enrichment-status').className = 'status-message error';
+            enrichmentStatusEl.textContent = 'Error: ' + error.message;
+            enrichmentStatusEl.className = 'status-message error';
         } finally {
             enrichBtn.disabled = false;
         }

@@ -4,33 +4,9 @@ async function processLinkedInUrls(urls, apolloKey, findymailKey) {
     const statusEl = document.getElementById('enrichment-status');
     const progressEl = document.getElementById('enrichment-progress');
 
-    // Function to validate LinkedIn person profile URL
-    function isValidLinkedInProfileUrl(url) {
-        if (!url || url === 'N/A' || !url.startsWith('http')) {
-            return false;
-        }
-        return url.includes('linkedin.com/in/');
-    }
-
-    // Clean URLs - only allow LinkedIn person profile URLs
-    const urlList = urls.split(/[\n,]/)
-        .map(u => u.trim())
-        .filter(u => isValidLinkedInProfileUrl(u))
-        .map(u => {
-            // Normalize URLs - ensure they have https://
-            if (!u.startsWith('http://') && !u.startsWith('https://')) {
-                return 'https://' + u;
-            }
-            return u;
-        });
-
-    if (urlList.length === 0) {
-        statusEl.textContent = 'No valid LinkedIn URLs found. Please enter URLs in format: https://www.linkedin.com/in/username';
-        return;
-    }
 
     // Initialize progress
-    progressEl.max = urlList.length;
+    progressEl.max = urls.length;
     progressEl.value = 0;
 
     // Load current stats to update them
@@ -52,7 +28,7 @@ async function processLinkedInUrls(urls, apolloKey, findymailKey) {
 
     // Initialize enriched data map
     const enrichedDataMap = new Map();
-    urlList.forEach(url => {
+    urls.forEach(url => {
         enrichedDataMap.set(url, {
             linkedin_url: url,
             first_name: '',
@@ -68,13 +44,13 @@ async function processLinkedInUrls(urls, apolloKey, findymailKey) {
     // ============================================
     // PHASE 1: Bulk Apollo Processing (5 per batch)
     // ============================================
-    statusEl.textContent = `Phase 1: Processing ${urlList.length} URLs with Apollo...`;
+    statusEl.textContent = `(5 per batch) Processing ${urls.length} URLs with Apollo...`;
 
     try {
         const apolloResults = await new Promise((resolve, reject) => {
             chrome.runtime.sendMessage({
                 action: 'fetchApolloDataBulk',
-                data: { linkedinUrls: urlList, apiKey: apolloKey }
+                data: { linkedinUrls: urls, apiKey: apolloKey }
             }, response => {
                 if (response.error) reject(new Error(response.error));
                 else resolve(response.data);
@@ -112,7 +88,8 @@ async function processLinkedInUrls(urls, apolloKey, findymailKey) {
             // Update progress
             const processed = index + 1;
             progressEl.value = processed;
-            statusEl.textContent = `Phase 1: Processed ${processed}/${urlList.length} URLs (Apollo: ${sessionStats.apolloCount} emails found)`;
+            statusEl.textContent = `Phase 1: Processed ${processed}/${urls.length} URLs (Apollo: ${sessionStats.apolloCount} emails found)`;
+            statusEl.className = 'status-message success';
         });
 
         // ============================================
@@ -138,7 +115,7 @@ async function processLinkedInUrls(urls, apolloKey, findymailKey) {
                     const personData = enrichedDataMap.get(url);
 
                     if (result.success && result.data) {
-                        // Findymail returns: { email, name, domain, first_name, last_name }
+                        // Findymail returns: { email, name, domain }
                         const findymailData = result.data;
 
                         if (findymailData && findymailData.email && findymailData.email.trim().length > 0) {
@@ -146,19 +123,7 @@ async function processLinkedInUrls(urls, apolloKey, findymailKey) {
                             personData.email = findymailData.email.trim();
                             sessionStats.findymailCount++;
 
-                            // Fallback fill for name if Apollo completely failed
-                            if (!personData.first_name && findymailData.first_name) {
-                                personData.first_name = findymailData.first_name;
-                            }
-                            if (!personData.last_name && findymailData.last_name) {
-                                personData.last_name = findymailData.last_name;
-                            }
-
-                            if (!personData.current_company && findymailData.domain) {
-                                personData.current_company = findymailData.domain;
-                            }
-
-                            // Also try to extract from name field if first_name/last_name not available
+                            // extract from name field 
                             if (!personData.first_name && findymailData.name) {
                                 const nameParts = findymailData.name.trim().split(' ');
                                 if (nameParts.length > 0) {
@@ -179,12 +144,16 @@ async function processLinkedInUrls(urls, apolloKey, findymailKey) {
                     }
 
                     // Update progress during Findymail phase
-                    const totalProcessed = urlList.length - urlsNeedingFindymail.length + index + 1;
+                    const totalProcessed = urls.length - urlsNeedingFindymail.length + index + 1;
                     progressEl.value = totalProcessed;
                     statusEl.textContent = `Phase 2: Enriching ${index + 1}/${urlsNeedingFindymail.length} URLs (Findymail: ${sessionStats.findymailCount} emails found)`;
+                    statusEl.className = 'status-message success';
                 });
             } catch (e) {
-                console.warn('Findymail bulk processing error:', e);
+                console.error('Findymail bulk processing error:', e);
+                statusEl.textContent = 'Error: ' + e.message;
+                statusEl.className = 'status-message error';
+                return;
             }
         }
 
@@ -200,15 +169,6 @@ async function processLinkedInUrls(urls, apolloKey, findymailKey) {
     // ============================================
     const enrichedData = Array.from(enrichedDataMap.values());
 
-    // Debug: Log all data before export to verify emails are present
-    console.log('=== FINAL ENRICHED DATA BEFORE EXPORT ===');
-    enrichedData.forEach((personData, index) => {
-        console.log(`[${index + 1}] URL: ${personData.linkedin_url}`);
-        console.log(`  - Email: ${personData.email || '(empty)'}`);
-        console.log(`  - Name: ${personData.first_name} ${personData.last_name}`);
-        console.log(`  - Company: ${personData.current_company}`);
-    });
-    console.log('=== END OF ENRICHED DATA ===');
 
     // Calculate final stats
     enrichedData.forEach(personData => {
@@ -217,8 +177,8 @@ async function processLinkedInUrls(urls, apolloKey, findymailKey) {
         }
     });
 
-    sessionStats.processed = urlList.length;
-    progressEl.value = urlList.length;
+    sessionStats.processed = urls.length;
+    progressEl.value = urls.length;
 
     // Update cumulative stats
     stats.processed += sessionStats.processed;
@@ -231,15 +191,13 @@ async function processLinkedInUrls(urls, apolloKey, findymailKey) {
     await chrome.storage.local.set({ enrichmentStats: stats });
 
     // Display session stats
-    const statsText = `Enriched: ${sessionStats.enriched} | Apollo: ${sessionStats.apolloCount} | Findymail: ${sessionStats.findymailCount}`;
     statusEl.textContent = `Done!`;
     statusEl.className = 'status-message success';
 
     // Update stats display
+    const statsText = `Enriched: ${sessionStats.enriched} | Apollo: ${sessionStats.apolloCount} | Findymail: ${sessionStats.findymailCount}`;
     const statsDisplay = document.getElementById('enrichment-stats');
-    if (statsDisplay) {
-        statsDisplay.textContent = statsText;
-    }
+    statsDisplay.textContent = statsText;
 
     // CRITICAL: Export to Excel AFTER all async operations complete
     // The enrichedData array is already populated with all data including Findymail emails
@@ -250,13 +208,6 @@ async function processLinkedInUrls(urls, apolloKey, findymailKey) {
 function exportToExcel(data) {
     console.log('=== EXPORT TO EXCEL ===');
     console.log(`Total records to export: ${data.length}`);
-
-    // // Verify data before export
-    // const recordsWithEmail = data.filter(row => row.email && row.email.trim().length > 0);
-    // console.log(`Records with email: ${recordsWithEmail.length}`);
-    // recordsWithEmail.forEach((row, index) => {
-    //     console.log(`  [${index + 1}] ${row.linkedin_url} -> ${row.email}`);
-    // });
 
     // Convert to CSV first (Excel can open CSV files)
     const headers = ['LinkedIn URL', 'First Name', 'Last Name', 'Email', 'State', 'Current Role', 'Current Company', 'Company Key Words'];
