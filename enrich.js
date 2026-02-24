@@ -1,12 +1,35 @@
 
 async function processLinkedInUrls(urls, apolloKey, findymailKey) {
-
     const statusEl = document.getElementById('enrichment-status');
     const progressEl = document.getElementById('enrichment-progress');
 
+    // Function to validate LinkedIn person profile URL
+    function isValidLinkedInProfileUrl(url) {
+        if (!url || url === 'N/A' || !url.startsWith('http')) {
+            return false;
+        }
+        return url.includes('linkedin.com/in/');
+    }
+
+    // Clean URLs - only allow LinkedIn person profile URLs
+    const urlList = urls.split(/[\n,]/)
+        .map(u => u.trim())
+        .filter(u => isValidLinkedInProfileUrl(u))
+        .map(u => {
+            // Normalize URLs - ensure they have https://
+            if (!u.startsWith('http://') && !u.startsWith('https://')) {
+                return 'https://' + u;
+            }
+            return u;
+        });
+
+    if (urlList.length === 0) {
+        statusEl.textContent = 'No valid LinkedIn URLs found. Please enter URLs in format: https://www.linkedin.com/in/username';
+        return;
+    }
 
     // Initialize progress
-    progressEl.max = urls.length;
+    progressEl.max = urlList.length;
     progressEl.value = 0;
 
     // Load current stats to update them
@@ -28,7 +51,7 @@ async function processLinkedInUrls(urls, apolloKey, findymailKey) {
 
     // Initialize enriched data map
     const enrichedDataMap = new Map();
-    urls.forEach(url => {
+    urlList.forEach(url => {
         enrichedDataMap.set(url, {
             linkedin_url: url,
             first_name: '',
@@ -44,13 +67,13 @@ async function processLinkedInUrls(urls, apolloKey, findymailKey) {
     // ============================================
     // PHASE 1: Bulk Apollo Processing (5 per batch)
     // ============================================
-    statusEl.textContent = `(5 per batch) Processing ${urls.length} URLs with Apollo...`;
+    statusEl.textContent = `(5 per batch) Processing ${urlList.length} URLs with Apollo...`;
 
     try {
         const apolloResults = await new Promise((resolve, reject) => {
             chrome.runtime.sendMessage({
                 action: 'fetchApolloDataBulk',
-                data: { linkedinUrls: urls, apiKey: apolloKey }
+                data: { linkedinUrls: urlList, apiKey: apolloKey }
             }, response => {
                 if (response.error) reject(new Error(response.error));
                 else resolve(response.data);
@@ -88,7 +111,7 @@ async function processLinkedInUrls(urls, apolloKey, findymailKey) {
             // Update progress
             const processed = index + 1;
             progressEl.value = processed;
-            statusEl.textContent = `Phase 1: Processed ${processed}/${urls.length} URLs (Apollo: ${sessionStats.apolloCount} emails found)`;
+            statusEl.textContent = `Phase 1: Processed ${processed}/${urlList.length} URLs (Apollo: ${sessionStats.apolloCount} emails found)`;
             statusEl.className = 'status-message success';
         });
 
@@ -144,7 +167,7 @@ async function processLinkedInUrls(urls, apolloKey, findymailKey) {
                     }
 
                     // Update progress during Findymail phase
-                    const totalProcessed = urls.length - urlsNeedingFindymail.length + index + 1;
+                    const totalProcessed = urlList.length - urlsNeedingFindymail.length + index + 1;
                     progressEl.value = totalProcessed;
                     statusEl.textContent = `Phase 2: Enriching ${index + 1}/${urlsNeedingFindymail.length} URLs (Findymail: ${sessionStats.findymailCount} emails found)`;
                     statusEl.className = 'status-message success';
@@ -177,8 +200,8 @@ async function processLinkedInUrls(urls, apolloKey, findymailKey) {
         }
     });
 
-    sessionStats.processed = urls.length;
-    progressEl.value = urls.length;
+    sessionStats.processed = urlList.length;
+    progressEl.value = urlList.length;
 
     // Update cumulative stats
     stats.processed += sessionStats.processed;

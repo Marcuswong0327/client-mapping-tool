@@ -640,13 +640,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const linkedInUrls = tabs
                 .map(tab => tab.url)
-                .filter(url => isValidLinkedInProfileUrl(url))
-                .map(url => {
-                    if(!url.startsWith('http://') && !url.startsWith('https://')){
-                        return 'https://' + url;
-                    }
-                }
-                );
+                .filter(url => isValidLinkedInProfileUrl(url));
 
             if (linkedInUrls.length === 0) {
                 enrichmentStatusEl.textContent = 'No LinkedIn profile URLs found in current tabs';
@@ -716,14 +710,7 @@ document.addEventListener('DOMContentLoaded', function () {
         chrome.storage.local.set({ linkedinUrls: linkedinUrlsInput.value });
         updateLinkedInUrlCount();
     });
-
-    // Initial count on load
-    // chrome.storage.local.get(['linkedinUrls'], function (result) {
-    //     if (result.linkedinUrls) {
-    //         linkedinUrlsInput.value = result.linkedinUrls;
-    //         updateLinkedInUrlCount();
-    //     }
-    // });
+    
 
     enrichBtn.addEventListener('click', async function () {
 
