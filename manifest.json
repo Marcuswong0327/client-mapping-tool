@@ -1,8 +1,8 @@
 {
     "manifest_version": 3,
     "name": "Client Mapping Tool",
-    "version": "2.1",
-    "description": "Client Mapping Tool with Copy URLs, Job Data Extractor, and Data Enricher tools.",
+    "version": "2.2",
+    "description": "Upgraded Client Mapping Tool with Job Data Extractor, Data Enricher tools & Copy URLs.",
     "icons": {
         "16": "second_edition/CMT_icon_16.png",
         "48": "second_edition/CMT_icon_48.png",
