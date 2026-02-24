@@ -76,6 +76,19 @@ https://www.seek.com.au/job/consultant_3"></textarea>
                     <button id="multiExtractBtn" class="extract-btn">Extract from URLs</button>
                 </div>
 
+                <div class="master-upload-section">
+                    <div class="section-header">
+                        <h3>Master Stakeholder File</h3>
+                    </div>
+
+                    <input id="masterFileInput" type="file" accept=".xlsx,.xls,.csv" style="display: none;" />
+                    <div id="masterDropzone" class="dropzone" role="button" tabindex="0">
+                        <div class="dropzone-title">Drag &amp; drop or click to upload</div>
+                        <div id="masterUploadMeta" class="dropzone-meta">No file uploaded yet</div>
+                    </div>
+                    <div id="masterUploadStatus" class="status-message"></div>
+                </div>
+
                 <div id="errorPreviewSection" class="error-preview-section" style="display: none;">
                     <button id="errorToggleBtn" class="error-toggle-btn">
                         <span id="errorToggleIcon">▼</span>
@@ -154,6 +167,7 @@ https://www.linkedin.com/in/consultant3"></textarea>
         </div>
     </div>
 
+    <script src="vendor/xlsx.full.min.js"></script>
     <script src="popup.js"></script>
     <script src="enrich.js"></script>
 </body>

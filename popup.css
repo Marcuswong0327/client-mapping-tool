@@ -159,6 +159,37 @@ p{
     margin-top: 20px;
 }
 
+.master-upload-section {
+    margin-top: 16px;
+}
+
+.dropzone {
+    width: 100%;
+    padding: 14px 12px;
+    border: 2px dashed #cfd6dd;
+    border-radius: 10px;
+    background-color: #ffffff;
+    user-select: none;
+}
+
+.dropzone.dragover {
+    border-color: #007bff;
+    background-color: #f3f8ff;
+}
+
+.dropzone-title {
+    font-size: 13px;
+    color: #333;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.dropzone-meta {
+    font-size: 12px;
+    color: #666;
+    word-break: break-word;
+}
+
 .section-header {
     margin-bottom: 15px;
 }

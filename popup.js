@@ -35,6 +35,12 @@ document.addEventListener('DOMContentLoaded', function () {
     const multiProgressFill = document.getElementById('multiProgressFill');
     const multiDetailsDiv = document.getElementById('multiDetails');
 
+    // Master stakeholder upload (Excel/CSV)
+    const masterFileInput = document.getElementById('masterFileInput');
+    const masterDropzone = document.getElementById('masterDropzone');
+    const masterUploadMeta = document.getElementById('masterUploadMeta');
+    const masterUploadStatus = document.getElementById('masterUploadStatus');
+
     const errorPreviewSection = document.getElementById('errorPreviewSection');
     const errorToggleBtn = document.getElementById('errorToggleBtn');
     const errorToggleIcon = document.getElementById('errorToggleIcon');
@@ -48,6 +54,75 @@ document.addEventListener('DOMContentLoaded', function () {
     let multiExtractedJobs = [];
     let extractionErrors = [];
     let isExporting = false; // Flag to prevent double downloads
+
+
+    async function handleMasterFileUpload(file) {
+        if (!file) return;
+
+        masterUploadStatus.textContent = "Reading file...";
+        masterUploadStatus.className = 'status-message loading';
+
+        try {
+            let matrix = [];
+
+            if (typeof XLSX === 'undefined') {
+                throw new Error('Excel parser not available (XLSX missing)');
+            }
+
+            const buffer = await file.arrayBuffer();
+            const wb = XLSX.read(buffer, { type: 'array' });
+            const firstSheetName = wb.SheetNames[0] ?? null;
+
+            if (!firstSheetName) {
+                throw new Error('No sheets found in workbook');
+            }
+            const ws = wb.Sheets[firstSheetName];
+            matrix = XLSX.utils.sheet_to_json(ws, {
+                header: 1,
+                blankrows: false,
+                defval: ''
+            });
+            
+            // if matrix is not an array and no data 
+            if (!Array.isArray(matrix) || matrix.length < 2) {
+                throw new Error('Master file looks empty (need header + at least 1 row)');
+            }
+
+            const meta = {
+                filename: file.name || 'master',
+                rows: matrix.length,
+            };
+
+            await chrome.storage.local.set({ masterValues: matrix, masterMeta: meta });
+
+            if (masterUploadMeta) {
+                masterUploadMeta.textContent = `${meta.filename}, ${(meta.rows)-1} rows`;
+            }
+            masterUploadStatus.textContent = "Uploaded & stored successfully";
+            masterUploadStatus.className = "status-message success";
+
+        } catch (e) {
+            console.error('Master upload failed:', e);
+            masterUploadStatus.textContent = "Fail to upload" + e.message;
+            masterUploadStatus.className = "status-message error";
+        }
+    }
+
+    async function loadMasterMetaOnStartup() {
+        try {
+            const { masterMeta } = await chrome.storage.local.get(['masterMeta']);
+            if (masterMeta && masterUploadMeta) {
+                masterUploadMeta.textContent = `${masterMeta.filename}`;
+                masterUploadStatus.textContent = "File loaded from previous upload"; 
+                masterUploadStatus.className = "status-message success";
+            }
+        } catch (e) {
+            console.error('File could not load from previous upload', e.message);
+            masterUploadStatus.textContent = 'Fail to load file from previous upload' + e.message;
+            masterUploadStatus.className = "status-message error";
+        }
+
+    }
 
     // chrome.storage.local.get(['savedUrl', 'savedMultiUrls'], function (result) {
     //     if (result.savedUrl) {
@@ -144,6 +219,39 @@ document.addEventListener('DOMContentLoaded', function () {
             updateMultiStatus('Error: ' + error.message, 'error');
         }
     });
+
+    // Master upload UI wiring
+    if (masterDropzone && masterFileInput) {
+        loadMasterMetaOnStartup();
+
+        masterDropzone.addEventListener('click', () => masterFileInput.click());
+        masterDropzone.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                masterFileInput.click();
+            }
+        });
+
+        masterFileInput.addEventListener('change', async (e) => {
+            const file = e.target.files && e.target.files[0];
+            await handleMasterFileUpload(file);
+            masterFileInput.value = '';
+        });
+
+        masterDropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            masterDropzone.classList.add('dragover');
+        });
+        masterDropzone.addEventListener('dragleave', () => {
+            masterDropzone.classList.remove('dragover');
+        });
+        masterDropzone.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            masterDropzone.classList.remove('dragover');
+            const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+            await handleMasterFileUpload(file);
+        });
+    }
 
     multiExtractBtn.addEventListener('click', async function () {
         const urlsText = multiUrlsInput.value.trim();
@@ -405,39 +513,51 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const companyMap = new Map();
         let lastCompany = '';
+        let lastNature = '';
 
         for (let i = 1; i < masterValues.length; i++) {
             const row = masterValues[i];
+            if (!row) continue;
+
             const rawCompany = row[mCol_Company];
+            const rawNature = row[mCol_Nature];
 
-            //Fill down logic 
-
-            if (rawCompany && rawCompany.toString().trim!=='') {
+            // Fill‑down logic: company and nature
+            if (rawCompany && rawCompany.toString().trim() !== '') {
                 lastCompany = rawCompany.toString();
-                const cleanComp = cleanCompanyNameForMatch(lastCompany);
-
-                const stakeholder = {
-                    nature: row[mCol_Nature] ? row[mCol_Nature].toString() : '',
-                    company: row[mCol_Company] ? row[mCol_Company].toString() : '',
-                    suburb: row[mCol_Suburb] ? row[mCol_Suburb].toString() : '',
-                    state: row[mCol_State] ? row[mCol_State].toString() : '',
-                    job: row[mCol_Job] ? row[mCol_Job].toString() : '',
-                    firstName: row[mCol_FirstName] ? row[mCol_FirstName].toString() : '',
-                    fullName: row[mCol_FullName] ? row[mCol_FullName].toString() : '',
-                    title: row[mCol_Title] ? row[mCol_Title].toString() : '',
-                    email: row[mCol_Email] ? row[mCol_Email].toString() : '',
-                    history1: row[mCol_History1] ? row[mCol_History1].toString() : '',
-                    history2: row[mCol_History2] ? row[mCol_History2].toString() : '',
-                    history3: row[mCol_History3] ? row[mCol_History3].toString() : '',
-                    history4: row[mCol_History4] ? row[mCol_History4].toString() : ''
-                };
-
-                if (!companyMap.has(cleanComp)) {
-                    companyMap.set(cleanComp, []);
-                }
-
-                companyMap.get(cleanComp).push(stakeholder);
             }
+            if (rawNature && rawNature.toString().trim() !== '') {
+                lastNature = rawNature.toString();
+            }
+
+            // Skip rows until we've seen at least one company name
+            if (!lastCompany) {
+                continue;
+            }
+
+            const cleanComp = cleanCompanyNameForMatch(lastCompany);
+
+            const stakeholder = {
+                nature: lastNature || '',
+                company: lastCompany || '',
+                suburb: row[mCol_Suburb] ? row[mCol_Suburb].toString() : '',
+                state: row[mCol_State] ? row[mCol_State].toString() : '',
+                job: row[mCol_Job] ? row[mCol_Job].toString() : '',
+                firstName: row[mCol_FirstName] ? row[mCol_FirstName].toString() : '',
+                fullName: row[mCol_FullName] ? row[mCol_FullName].toString() : '',
+                title: row[mCol_Title] ? row[mCol_Title].toString() : '',
+                email: row[mCol_Email] ? row[mCol_Email].toString() : '',
+                history1: row[mCol_History1] ? row[mCol_History1].toString() : '',
+                history2: row[mCol_History2] ? row[mCol_History2].toString() : '',
+                history3: row[mCol_History3] ? row[mCol_History3].toString() : '',
+                history4: row[mCol_History4] ? row[mCol_History4].toString() : ''
+            };
+
+            if (!companyMap.has(cleanComp)) {
+                companyMap.set(cleanComp, []);
+            }
+
+            companyMap.get(cleanComp).push(stakeholder);
         }
 
         return companyMap;
@@ -517,6 +637,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
             } else {
                 const newRow = [...row];
+                // Pad empty stakeholder columns to keep CSV aligned with headers
+                newRow.push('', '', '', '', '', '', '', '', '', '', '', '', '');
                 outputData.push(newRow);
             }
         }
@@ -556,13 +678,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
     async function exportJobsWithStakeholders(jobs) {
         try {
-            
-           
-
-            if (!masterValues || masterValues.length === 0) {
-                throw new Error('Master sheet is empty or not accessible');
+            updateMultiStatus('Merging stakeholder info from uploaded master...', 'loading');
+            const { masterValues } = await chrome.storage.local.get(['masterValues']);
+            if (!Array.isArray(masterValues) || masterValues.length < 2) {
+                throw new Error('No master file uploaded. Please upload your master Excel/CSV first.');
             }
-
             const jobValues = buildJobListingMatrixFromJobs(jobs);
             const mergedMatrix = mergeJobsWithStakeholders(masterValues, jobValues);
             exportStakeholderEnrichedCsv(mergedMatrix);
