@@ -76,15 +76,17 @@ https://www.seek.com.au/job/consultant_3"></textarea>
                     <button id="multiExtractBtn" class="extract-btn">Extract from URLs</button>
                 </div>
 
+                <!--Master file upload section-->
                 <div class="master-upload-section">
                     <div class="section-header">
                         <h3>Master Stakeholder File</h3>
+                        <p>Excel (.xlsx) format only</p>
                     </div>
 
-                    <input id="masterFileInput" type="file" accept=".xlsx,.xls,.csv" style="display: none;" />
+                    <input id="masterFileInput" type="file" accept=".xlsx" style="display: none;" />
                     <div id="masterDropzone" class="dropzone" role="button" tabindex="0">
                         <div class="dropzone-title">Drag &amp; drop or click to upload</div>
-                        <div id="masterUploadMeta" class="dropzone-meta">No file uploaded yet</div>
+                        <div id="masterUploadMeta" class="dropzone-meta">No file yet</div>
                     </div>
                     <div id="masterUploadStatus" class="status-message"></div>
                 </div>
