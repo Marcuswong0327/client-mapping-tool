@@ -9,7 +9,7 @@ function detectWebsite() {
     return null;
 }
 
-function validateJobUrl(url, jobTitle, company) {
+function validateJobUrl(url) {
     if (!url || url === 'N/A' || !url.startsWith('http')) {
         return false;
     }
@@ -55,7 +55,7 @@ function extractJobFromCard(card, website, cardIndex) {
                 const href = titleElement.href;
                 const title = titleElement.textContent.trim();
 
-                if (validateJobUrl(href, title, '')) {
+                if (validateJobUrl(href)) {
                     jobData.jobTitle = title;
                     jobData.jobUrl = href;
                     break;
@@ -99,7 +99,7 @@ function extractJobFromCard(card, website, cardIndex) {
                 const linkElement = card.querySelector(selector);
                 if (linkElement && linkElement.href) {
                     const href = linkElement.href;
-                    if (validateJobUrl(href, jobData.jobTitle, '')) {
+                    if (validateJobUrl(href)) {
                         jobData.jobUrl = href;
                         break;
                     }
@@ -194,7 +194,7 @@ function extractJobFromCard(card, website, cardIndex) {
                 url = baseUrl + url;
             }
 
-            if (validateJobUrl(url, jobData.jobTitle, jobData.company)) {
+            if (validateJobUrl(url)) {
                 jobData.jobUrl = url;
             } else {
                 jobData.jobUrl = '';
@@ -205,7 +205,7 @@ function extractJobFromCard(card, website, cardIndex) {
             jobData.jobTitle !== '' &&
             jobData.jobUrl !== '' &&
             jobData.jobTitle.length >= 2 &&
-            validateJobUrl(jobData.jobUrl, jobData.jobTitle, jobData.company));
+            validateJobUrl(jobData.jobUrl));
         
         if (cardIndex < 3) {
             console.log(`Card ${cardIndex + 1} (${website}):`, {
