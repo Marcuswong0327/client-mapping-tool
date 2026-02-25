@@ -34,6 +34,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const multiStatusDiv = document.getElementById('multiStatus');
     const multiProgressFill = document.getElementById('multiProgressFill');
     const multiDetailsDiv = document.getElementById('multiDetails');
+    const githubGistTokenInput = document.getElementById('githubGistToken');
 
     // Master stakeholder upload (Excel/CSV)
     const masterFileInput = document.getElementById('masterFileInput');
@@ -124,14 +125,18 @@ document.addEventListener('DOMContentLoaded', function () {
 
     }
 
-    // chrome.storage.local.get(['savedUrl', 'savedMultiUrls'], function (result) {
-    //     if (result.savedUrl) {
-    //         jobUrlInput.value = result.savedUrl;
-    //     }
-    //     if (result.savedMultiUrls) {
-    //         multiUrlsInput.value = result.savedMultiUrls;
-    //     }
-    // });
+    // Load previously saved GitHub Gist token (if any)
+    if (githubGistTokenInput) {
+        chrome.storage.local.get(['githubGistToken'], function (result) {
+            if (result.githubGistToken) {
+                githubGistTokenInput.value = result.githubGistToken;
+            }
+        });
+
+        githubGistTokenInput.addEventListener('input', function () {
+            chrome.storage.local.set({ githubGistToken: githubGistTokenInput.value });
+        });
+    }
 
     // jobUrlInput.addEventListener('input', function () {
     //     chrome.storage.local.set({ savedUrl: jobUrlInput.value });
@@ -654,14 +659,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const csvLines = matrix.map(row =>
             row.map(cell => {
-                const value = cell == null ? '' : normalizeText(String(cell));
+                const value = cell === null ? '' : normalizeText(String(cell));
                 return `"${value.replace(/"/g, '""')}"`;
             }).join(',')
         );
 
         const csvContent = csvLines.join('\n');
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const filename = 'seek_job_data_with_stakeholders.csv';
+        const filename = 'seek_job_with_stakeholders.csv';
 
         const url = URL.createObjectURL(blob);
         chrome.downloads.download({

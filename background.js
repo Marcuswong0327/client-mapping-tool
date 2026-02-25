@@ -36,6 +36,172 @@ function safeSendMessage(message) {
     chrome.runtime.sendMessage(message).catch(() => { });
 }
 
+// ============================================================================
+// Markdown + GitHub Gist helpers (OOP-style)
+// ============================================================================
+
+class MarkdownJobFormatter {
+    buildMarkdown(job) {
+        const lines = [];
+        const title = job.jobTitle || 'Job Listing';
+
+        lines.push(`# ${title}`);
+        lines.push('');
+
+        const summaryLines = [];
+        if (job.company) summaryLines.push(`- Company: ${job.company}`);
+        if (job.state) summaryLines.push(`- State: ${job.state}`);
+        if (job.suburbs) summaryLines.push(`- Suburbs: ${job.suburbs}`);
+        if (job.salary) summaryLines.push(`- Salary: ${job.salary}`);
+        if (job.postedDate) summaryLines.push(`- Posted: ${job.postedDate}`);
+
+        const originalUrl = job.seekUrl || job.url;
+        if (originalUrl) summaryLines.push(`- Original URL: ${originalUrl}`);
+
+        if (summaryLines.length > 0) {
+            lines.push('**Summary**');
+            lines.push('');
+            lines.push(...summaryLines);
+            lines.push('');
+        }
+
+        lines.push('---');
+        lines.push('');
+
+        const bodyMarkdown = this.htmlToMarkdown(job.descriptionHtml || job.jobHtml || '');
+        if (bodyMarkdown) {
+            lines.push(bodyMarkdown);
+        }
+
+        return lines.join('\n');
+    }
+
+    htmlToMarkdown(html) {
+        if (!html) return '';
+
+        let md = html;
+
+        // Line breaks and paragraphs
+        md = md.replace(/<\s*br\s*\/?>/gi, '\n');
+        md = md.replace(/<\/\s*p\s*>/gi, '\n\n');
+        md = md.replace(/<\s*p[^>]*>/gi, '');
+
+        // Headings
+        md = md.replace(/<h1[^>]*>(.*?)<\/h1>/gi, '# $1\n\n');
+        md = md.replace(/<h2[^>]*>(.*?)<\/h2>/gi, '## $1\n\n');
+        md = md.replace(/<h3[^>]*>(.*?)<\/h3>/gi, '### $1\n\n');
+        md = md.replace(/<h4[^>]*>(.*?)<\/h4>/gi, '#### $1\n\n');
+
+        // Bold / italic
+        md = md.replace(/<(strong|b)[^>]*>(.*?)<\/\1>/gi, '**$2**');
+        md = md.replace(/<(em|i)[^>]*>(.*?)<\/\1>/gi, '*$2*');
+
+        // Lists
+        md = md.replace(/<li[^>]*>(.*?)<\/li>/gi, '- $1\n');
+        md = md.replace(/<\/ul>/gi, '\n');
+        md = md.replace(/<ul[^>]*>/gi, '\n');
+
+        // Links
+        md = md.replace(/<a[^>]*href=["']([^"']+)["'][^>]*>(.*?)<\/a>/gi, '[$2]($1)');
+
+        // Strip remaining tags
+        md = md.replace(/<\/?[^>]+>/g, '');
+
+        // Basic entities
+        const entities = {
+            '&nbsp;': ' ',
+            '&amp;': '&',
+            '&lt;': '<',
+            '&gt;': '>',
+            '&quot;': '"',
+            '&#39;': '\''
+        };
+        Object.keys(entities).forEach(key => {
+            md = md.split(key).join(entities[key]);
+        });
+
+        return md.replace(/\s+\n/g, '\n').trim();
+    }
+}
+
+class GistClient {
+    constructor(token) {
+        this.token = token;
+        this.apiBase = 'https://api.github.com';
+    }
+
+    async createJobGist(markdown, job) {
+        const safeTitle = (job.jobTitle || 'seek-job')
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '') || 'seek-job';
+
+        const filename = `${safeTitle}.md`;
+        const body = {
+            description: `Seek job: ${job.jobTitle || ''}${job.company ? ` @ ${job.company}` : ''}`,
+            public: false,
+            files: {}
+        };
+        body.files[filename] = { content: markdown || '' };
+
+        const response = await fetch(`${this.apiBase}/gists`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `token ${this.token}`
+            },
+            body: JSON.stringify(body)
+        });
+
+        if (!response.ok) {
+            const text = await response.text();
+            throw new Error(`GitHub Gist error ${response.status}: ${text}`);
+        }
+
+        const data = await response.json();
+        return data.html_url;
+    }
+}
+
+async function getGithubGistToken() {
+    try {
+        const result = await chrome.storage.local.get(['githubGistToken']);
+        return result.githubGistToken || null;
+    } catch {
+        return null;
+    }
+}
+
+class JobGistService {
+    constructor(formatter) {
+        this.formatter = formatter;
+    }
+
+    async attachGistUrl(job) {
+        const token = await getGithubGistToken();
+        if (!token) {
+            // No token configured, keep original Seek URL
+            return job;
+        }
+
+        const client = new GistClient(token);
+        const markdown = this.formatter.buildMarkdown({
+            ...job,
+            seekUrl: job.seekUrl || job.url
+        });
+        const gistUrl = await client.createJobGist(markdown, job);
+
+        job.seekUrl = job.seekUrl || job.url;
+        job.gistUrl = gistUrl;
+        job.url = gistUrl; // used by CSV export
+
+        return job;
+    }
+}
+
+const markdownJobFormatter = new MarkdownJobFormatter();
+const jobGistService = new JobGistService(markdownJobFormatter);
+
 function extractJobDataFromPage(url) {
     const jobData = {
         state: '',
@@ -45,7 +211,10 @@ function extractJobDataFromPage(url) {
         salary: '',
         postedDate: '',
         contactEmail: '',
-        url: url
+        url: url,
+        seekUrl: url,
+        jobHtml: '',
+        descriptionHtml: ''
     };
 
     const titleSelectors = [
@@ -143,6 +312,9 @@ function extractJobDataFromPage(url) {
 
     // Try to locate the main job content container first
     const jobContainer = document.querySelector('[data-automation="job-view-container"]') || document;
+    if (jobContainer) {
+        jobData.jobHtml = jobContainer.innerHTML;
+    }
 
     //These selectors below are inaccurate, better to scope within the jobContainer only, find regex match
 
@@ -213,6 +385,9 @@ function extractJobDataFromPage(url) {
         }
 
         const descriptionText = descriptionElement ? descriptionElement.innerText : '';
+        if (descriptionElement) {
+            jobData.descriptionHtml = descriptionElement.innerHTML;
+        }
 
         const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g;
         const emails = descriptionText.match(emailRegex);
@@ -225,6 +400,10 @@ function extractJobDataFromPage(url) {
     }
 
     jobData.contactEmail = extractEmailFromDescription();
+
+    if (!jobData.descriptionHtml && jobContainer) {
+        jobData.descriptionHtml = jobContainer.innerHTML;
+    }
 
     return jobData;
 
@@ -548,9 +727,22 @@ async function extractSingleJob(url, index) {
         // Initial 3-second delay before retry loop
         await new Promise(res => setTimeout(res, 3000));
 
-        const data = await attemptExtraction();
+        const rawData = await attemptExtraction();
+        let finalData = { ...rawData };
+
+        try {
+            finalData = await jobGistService.attachGistUrl(finalData);
+        } catch (gistError) {
+            console.error(`[${index}] Gist creation failed:`, gistError);
+            finalData.gistError = gistError.message;
+            // Ensure we always have at least the original Seek URL
+            if (!finalData.url && rawData && rawData.url) {
+                finalData.url = rawData.url;
+            }
+        }
+
         cleanup();
-        return data;
+        return finalData;
 
     } catch (err) {
         cleanup();

@@ -21,7 +21,8 @@
         "*://*.linkedin.com/*",
         "https://api.apollo.io/*",
         "https://app.findymail.com/*",
-        "https://www.seek.com.au/*"
+        "https://www.seek.com.au/*",
+        "https://api.github.com/*"
     ],
     "action": {
         "default_popup": "popup.html",
