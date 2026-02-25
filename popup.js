@@ -435,7 +435,7 @@ document.addEventListener('DOMContentLoaded', function () {
             url: url,
             filename: csvFilename,
             saveAs: true
-        }, function () {
+        }, function (downloadId) {
             if (chrome.runtime.lastError) {
                 updateStatus('Export failed: ' + chrome.runtime.lastError.message, 'error');
             } else {
@@ -471,7 +471,7 @@ document.addEventListener('DOMContentLoaded', function () {
             url: url,
             filename: filename,
             saveAs: false
-        }, function () {
+        }, function (downloadId) {
             if (chrome.runtime.lastError) {
                 updateMultiStatus('Export failed: ' + chrome.runtime.lastError.message, 'error');
             } else {
