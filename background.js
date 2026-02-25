@@ -36,15 +36,16 @@ function safeSendMessage(message) {
     chrome.runtime.sendMessage(message).catch(() => { });
 }
 
-// ============================================================================
-// Markdown + GitHub Gist helpers (OOP-style)
-// ============================================================================
+// Markdown + GitHub Gist helpers
 
-class MarkdownJobFormatter {
+// build base markdown layout (title, company, state, suburb, salary, email, postedDate, seekURL) 
+// build markdown on job description using formatter
+class MarkdownJob {
     buildMarkdown(job) {
         const lines = [];
         const title = job.jobTitle || 'Job Listing';
 
+        // Capitalize job title 
         lines.push(`# ${title}`);
         lines.push('');
 
@@ -53,26 +54,20 @@ class MarkdownJobFormatter {
         if (job.state) summaryLines.push(`- State: ${job.state}`);
         if (job.suburbs) summaryLines.push(`- Suburbs: ${job.suburbs}`);
         if (job.salary) summaryLines.push(`- Salary: ${job.salary}`);
-        if (job.postedDate) summaryLines.push(`- Posted: ${job.postedDate}`);
+        if(job.contactEmail ?? job.email) summaryLines.push(`- Email: ${job.email ?? job.contactEmail}`);
+        if (job.postedDate) summaryLines.push(`- Posted: ${job.postedDate}`);        
+        if (job.seekUrl ?? job.url) summaryLines.push(`- Original URL: ${originalUrl}`);
 
-        const originalUrl = job.seekUrl || job.url;
-        if (originalUrl) summaryLines.push(`- Original URL: ${originalUrl}`);
-
-        if (summaryLines.length > 0) {
-            lines.push('**Summary**');
-            lines.push('');
-            lines.push(...summaryLines);
-            lines.push('');
-        }
+        lines.push(...summaryLines);
+        lines.push('');
+        
 
         lines.push('---');
         lines.push('');
 
-        const bodyMarkdown = this.htmlToMarkdown(job.descriptionHtml || job.jobHtml || '');
-        if (bodyMarkdown) {
-            lines.push(bodyMarkdown);
-        }
-
+        const bodyMarkdown = this.htmlToMarkdown(job.descriptionHtml || job.jobHtml);
+        lines.push(bodyMarkdown);
+        
         return lines.join('\n');
     }
 
@@ -116,6 +111,8 @@ class MarkdownJobFormatter {
             '&quot;': '"',
             '&#39;': '\''
         };
+
+        //this lines of code find entities keys above and replace it with their values 
         Object.keys(entities).forEach(key => {
             md = md.split(key).join(entities[key]);
         });
@@ -131,18 +128,17 @@ class GistClient {
     }
 
     async createJobGist(markdown, job) {
-        const safeTitle = (job.jobTitle || 'seek-job')
+        const safeTitle = (job.jobTitle)
             .toLowerCase()
-            .replace(/[^a-z0-9]+/g, '-')
-            .replace(/^-+|-+$/g, '') || 'seek-job';
+            .replace(/[^a-z0-9]+/g, '_')
+            .replace(/^-+|-+$/g, '');
 
         const filename = `${safeTitle}.md`;
         const body = {
-            description: `Seek job: ${job.jobTitle || ''}${job.company ? ` @ ${job.company}` : ''}`,
             public: false,
             files: {}
         };
-        body.files[filename] = { content: markdown || '' };
+        body.files[filename] = { content: markdown ?? '' };
 
         const response = await fetch(`${this.apiBase}/gists`, {
             method: 'POST',
@@ -159,7 +155,7 @@ class GistClient {
         }
 
         const data = await response.json();
-        return data.html_url;
+        return data.html_url; // The URL from gists to store in seek url col 
     }
 }
 
@@ -187,20 +183,19 @@ class JobGistService {
         const client = new GistClient(token);
         const markdown = this.formatter.buildMarkdown({
             ...job,
-            seekUrl: job.seekUrl || job.url
+            seekUrl: job.seekUrl
         });
         const gistUrl = await client.createJobGist(markdown, job);
-
-        job.seekUrl = job.seekUrl || job.url;
         job.gistUrl = gistUrl;
-        job.url = gistUrl; // used by CSV export
 
         return job;
     }
 }
 
-const markdownJobFormatter = new MarkdownJobFormatter();
+
+const markdownJobFormatter = new MarkdownJob();
 const jobGistService = new JobGistService(markdownJobFormatter);
+
 
 function extractJobDataFromPage(url) {
     const jobData = {
@@ -211,7 +206,6 @@ function extractJobDataFromPage(url) {
         salary: '',
         postedDate: '',
         contactEmail: '',
-        url: url,
         seekUrl: url,
         jobHtml: '',
         descriptionHtml: ''
