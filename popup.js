@@ -279,7 +279,7 @@ document.addEventListener('DOMContentLoaded', function () {
         multiExtractBtn.disabled = true;
         updateMultiStatus(`Extracting ${urls.length} job(s)...`, 'loading');
         updateMultiProgress(0);
-        updateMultiDetails('Initializing...');
+        multiDetailsDiv.textContent = "Initializing..."
 
         extractionErrors = [];
         errorPreviewSection.style.display = 'none';
@@ -358,14 +358,15 @@ document.addEventListener('DOMContentLoaded', function () {
             const percentage = (current / total) * 100;
             updateMultiProgress(percentage);
             updateMultiStatus(`Processing ${current} of ${total} URLs...`, 'loading');
-            updateMultiDetails(`Extracted: ${results}`);
+            multiDetailsDiv.textContent = `Extracted ${results}`;
+
         } else if (request.action === 'multiExtractionComplete') {
             multiExtractedJobs = request.results;
             extractionErrors = request.errors;
             const totalUrls = request.results.length + request.errors.length;
             updateMultiStatus(`Complete! Extracted ${request.results.length} of ${totalUrls} jobs`, 'success');
             updateMultiProgress(100);
-            updateMultiDetails(`Extracted: ${request.results.length} | Errors: ${request.errors.length}`);
+            multiDetailsDiv.textContent = `Extracted ${request.results.length} | Error: ${request.error.length}`;
             multiExtractBtn.disabled = false;
 
             if (request.results.length > 0 && !isExporting) {
@@ -401,10 +402,6 @@ document.addEventListener('DOMContentLoaded', function () {
         multiProgressFill.style.width = percentage + '%';
     }
 
-    function updateMultiDetails(message) {
-        multiDetailsDiv.textContent = message;
-    }
-
     function normalizeText(str) {
         if (!str) return str;
         return str
@@ -438,7 +435,7 @@ document.addEventListener('DOMContentLoaded', function () {
             url: url,
             filename: csvFilename,
             saveAs: true
-        }, function (downloadId) {
+        }, function () {
             if (chrome.runtime.lastError) {
                 updateStatus('Export failed: ' + chrome.runtime.lastError.message, 'error');
             } else {
@@ -459,7 +456,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 `"${normalizeText(job.suburbs || '').replace(/"/g, '""')}"`,
                 `"${normalizeText(job.jobTitle || '').replace(/"/g, '""')}"`,
                 `"${normalizeText(job.company || '').replace(/"/g, '""')}"`,
-                `"${normalizeText(job.salary || '-').replace(/"/g, '""')}"`,
+                `"${normalizeText(job.salary || '').replace(/"/g, '""')}"`,
                 `"${normalizeText(job.postedDate || '').replace(/"/g, '""')}"`,
                 `"${normalizeText(job.contactEmail || '').replace(/"/g, '""')}"`,
                 `"${job.url || ''}"`
@@ -474,7 +471,7 @@ document.addEventListener('DOMContentLoaded', function () {
             url: url,
             filename: filename,
             saveAs: false
-        }, function (downloadId) {
+        }, function () {
             if (chrome.runtime.lastError) {
                 updateMultiStatus('Export failed: ' + chrome.runtime.lastError.message, 'error');
             } else {
@@ -490,9 +487,9 @@ document.addEventListener('DOMContentLoaded', function () {
         let s = name.toUpperCase();
         s = s.replace(/[^A-Z0-9\s]/g, '');
 
-        const noiseRegex = /\b(PTY|LTD|LIMITED|INC|CORPORATION|GROUP|AUSTRALIA|HOLDINGS|SOLUTIONS|SYSTEMS|SERVICES|DEVELOPMENTS)\b/g;
+        //const noiseRegex = /\b(PTY|LTD|LIMITED|INC|CORPORATION|GROUP|AUSTRALIA|HOLDINGS|SOLUTIONS|SYSTEMS|SERVICES|DEVELOPMENTS)\b/g;
 
-        s = s.replace(noiseRegex, '');
+        //s = s.replace(noiseRegex, '');
         return s.replace(/\s+/g, ' ').trim();
     }
 
@@ -681,7 +678,7 @@ document.addEventListener('DOMContentLoaded', function () {
             updateMultiStatus('Merging stakeholder info from uploaded master...', 'loading');
             const { masterValues } = await chrome.storage.local.get(['masterValues']);
             if (!Array.isArray(masterValues) || masterValues.length < 2) {
-                throw new Error('No master file uploaded. Please upload your master Excel/CSV first.');
+                throw new Error('No master file uploaded. Please upload your master Excel first.');
             }
             const jobValues = buildJobListingMatrixFromJobs(jobs);
             const mergedMatrix = mergeJobsWithStakeholders(masterValues, jobValues);
