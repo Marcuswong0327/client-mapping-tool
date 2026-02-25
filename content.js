@@ -283,11 +283,6 @@ function extractSingleJobPageData() {
                 if (statePart.includes('NSW')) jobData.state = 'Sydney (NSW)';
                 else if (statePart.includes('VIC')) jobData.state = 'Melbourne (VIC)';
                 else if (statePart.includes('QLD')) jobData.state = 'Brisbane (QLD)';
-                else if (statePart.includes('WA')) jobData.state = 'Perth (WA)';
-                else if (statePart.includes('SA')) jobData.state = 'Adelaide (SA)';
-                else if (statePart.includes('TAS')) jobData.state = 'Hobart (TAS)';
-                else if (statePart.includes('ACT')) jobData.state = 'Canberra (ACT)';
-                else if (statePart.includes('NT')) jobData.state = 'Darwin (NT)';
                 else jobData.state = statePart;
             } else if (parts.length === 1) {
                 jobData.suburbs = parts[0];
@@ -349,22 +344,6 @@ function scrapeSeekJobs() {
     return jobs;
 }
 
-function scrapeJobstreetJobs() {
-    const jobs = [];
-    const jobCards = document.querySelectorAll('[data-automation="job-list-item"], .job-item, .job-card, [data-testid="job-card"], .job, article[data-cy]');
-
-    console.log(`Found ${jobCards.length} job cards on Jobstreet page`);
-
-    jobCards.forEach((card, index) => {
-        const jobData = extractJobFromCard(card, 'jobstreet', index);
-        if (jobData) {
-            jobs.push(jobData);
-        }
-    });
-
-    console.log(`Extracted ${jobs.length} valid jobs from current Jobstreet page`);
-    return jobs;
-}
 
 function findNextPageButton() {
     const website = detectWebsite();
@@ -384,22 +363,7 @@ function findNextPageButton() {
                 return button;
             }
         }
-    } else if (website === 'jobstreet') {
-        const nextButtons = [
-            '.next',
-            '[data-automation="pagination-next"]',
-            '.pagination-next',
-            'a[aria-label="Next"]'
-        ];
-
-        for (const selector of nextButtons) {
-            const button = document.querySelector(selector);
-            if (button && !button.disabled && !button.classList.contains('disabled')) {
-                return button;
-            }
-        }
     }
-
     return null;
 }
 
@@ -439,8 +403,6 @@ async function scrapeAllPages() {
             let pageJobs = [];
             if (website === 'seek') {
                 pageJobs = scrapeSeekJobs();
-            } else if (website === 'jobstreet') {
-                pageJobs = scrapeJobstreetJobs();
             }
 
             if (pageJobs.length === 0 && pageCount > 1) {
