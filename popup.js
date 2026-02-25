@@ -366,14 +366,20 @@ document.addEventListener('DOMContentLoaded', function () {
             const totalUrls = request.results.length + request.errors.length;
             updateMultiStatus(`Complete! Extracted ${request.results.length} of ${totalUrls} jobs`, 'success');
             updateMultiProgress(100);
-            multiDetailsDiv.textContent = `Extracted ${request.results.length} | Error: ${request.error.length}`;
+            multiDetailsDiv.textContent = `Extracted ${request.results.length} | Error: ${request.errors.length}`;
             multiExtractBtn.disabled = false;
 
             if (request.results.length > 0 && !isExporting) {
                 isExporting = true;
                 setTimeout(async () => {
-                    await exportJobsWithStakeholders(request.results);
-                    isExporting = false;
+                    try {
+                        await exportJobsWithStakeholders(request.results);
+                    } catch (error) {
+                        console.error('Auto-export failed:', error);
+                        updateMultiStatus('Auto-export failed: ' + error.message, 'error');
+                    } finally {
+                        isExporting = false;
+                    }
                 }, 500);
             }
 
@@ -662,12 +668,12 @@ document.addEventListener('DOMContentLoaded', function () {
             url: url,
             filename: filename,
             saveAs: false
-        }, function () {
+        }, function (downloadId) {
             if (chrome.runtime.lastError) {
                 updateMultiStatus('Export failed: ' + chrome.runtime.lastError.message, 'error');
             } else {
                 // minus header row
-                updateMultiStatus(`Downloaded ${matrix.length - 1} rows with stakeholders`, 'success');
+                updateMultiStatus(`Download complete`, 'success');
             }
             URL.revokeObjectURL(url);
         });
