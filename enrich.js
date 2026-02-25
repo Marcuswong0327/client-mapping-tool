@@ -157,6 +157,7 @@ async function processLinkedInUrls(urls, apolloKey, findymailKey) {
                                 }
                             }
 
+
                             // Debug log to verify email is being set
                             console.log(`[Findymail] URL: ${url}, Email found: ${personData.email}`);
                         } else {
@@ -264,7 +265,7 @@ function exportToExcel(data) {
         url: url,
         filename: `enriched_data_${new Date().toISOString().slice(0, 10)}.csv`,
         saveAs: false
-    }, function (downloadId) {
+    }, function () {
         if (chrome.runtime.lastError) {
             console.error('Download failed:', chrome.runtime.lastError);
             // Fallback to direct download
