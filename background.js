@@ -55,11 +55,13 @@ class MarkdownJobFormatter {
         if (job.salary) summaryLines.push(`- Salary: ${job.salary}`);
         if (job.postedDate) summaryLines.push(`- Posted: ${job.postedDate}`);
 
+        const contactEmail = job.email || job.contactEmail; 
+        if(contactEmail) summaryLines.push(`- Email: ${contactEmail}`);
+        
         const originalUrl = job.seekUrl || job.url;
         if (originalUrl) summaryLines.push(`- Original URL: ${originalUrl}`);
 
-        const contactEmail = job.email || job.contactEmail; 
-        if(contactEmail) summaryLines.push(`-Email: ${contactEmail}`);
+        
 
         if (summaryLines.length > 0) {
             lines.push('');
