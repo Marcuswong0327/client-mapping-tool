@@ -1,5 +1,6 @@
 `use strict`
 
+
 function promisify(fn, ...args) {
     return new Promise((resolve, reject) => {
         fn(...args, (result) => {
@@ -47,84 +48,31 @@ class MarkdownJobFormatter {
 
         lines.push(`# ${title}`);
         lines.push('');
-
-        const summaryLines = [];
-        if (job.company) summaryLines.push(`- Company: ${job.company}`);
-        if (job.state) summaryLines.push(`- State: ${job.state}`);
-        if (job.suburbs) summaryLines.push(`- Suburbs: ${job.suburbs}`);
-        if (job.salary) summaryLines.push(`- Salary: ${job.salary}`);
-        if (job.postedDate) summaryLines.push(`- Posted: ${job.postedDate}`);
+        lines.push('');
+        
+        if (job.company) lines.push(`- Company: ${job.company}`);
+        if (job.state) lines.push(`- State: ${job.state}`);
+        if (job.suburbs) lines.push(`- Suburbs: ${job.suburbs}`);
+        if (job.salary) lines.push(`- Salary: ${job.salary}`);
+        if (job.postedDate) lines.push(`- Posted: ${job.postedDate}`);
 
         const contactEmail = job.email || job.contactEmail; 
-        if(contactEmail) summaryLines.push(`- Email: ${contactEmail}`);
-        
+        if(contactEmail) lines.push(`- Email: ${contactEmail}`);
+
         const originalUrl = job.seekUrl || job.url;
-        if (originalUrl) summaryLines.push(`- Original URL: ${originalUrl}`);
+        if (originalUrl) lines.push(`- Original URL: ${originalUrl}`);
 
-        
-
-        if (summaryLines.length > 0) {
-            lines.push('');
-            lines.push(...summaryLines);
-            lines.push('');
-        }
-
+        lines.push('');
         lines.push('---');
         lines.push('');
 
-        const bodyMarkdown = this.htmlToMarkdown(job.descriptionHtml || job.jobHtml || '');
-        if (bodyMarkdown) {
-            lines.push(bodyMarkdown);
-        }
+        const descriptionMarkdown = job.description || job.descriptionMarkdown || '';
+        
+        if (descriptionMarkdown) {
+            lines.push(descriptionMarkdown);
+        };
 
         return lines.join('\n');
-    }
-
-    htmlToMarkdown(html) {
-        if (!html) return '';
-
-        let md = html;
-
-        // Line breaks and paragraphs
-        md = md.replace(/<\s*br\s*\/?>/gi, '\n');
-        md = md.replace(/<\/\s*p\s*>/gi, '\n\n');
-        md = md.replace(/<\s*p[^>]*>/gi, '');
-
-        // Headings
-        md = md.replace(/<h1[^>]*>(.*?)<\/h1>/gi, '# $1\n\n');
-        md = md.replace(/<h2[^>]*>(.*?)<\/h2>/gi, '## $1\n\n');
-        md = md.replace(/<h3[^>]*>(.*?)<\/h3>/gi, '### $1\n\n');
-        md = md.replace(/<h4[^>]*>(.*?)<\/h4>/gi, '#### $1\n\n');
-
-        // Bold / italic
-        md = md.replace(/<(strong|b)[^>]*>(.*?)<\/\1>/gi, '**$2**');
-        md = md.replace(/<(em|i)[^>]*>(.*?)<\/\1>/gi, '*$2*');
-
-        // Lists
-        md = md.replace(/<li[^>]*>(.*?)<\/li>/gi, '- $1\n');
-        md = md.replace(/<\/ul>/gi, '\n');
-        md = md.replace(/<ul[^>]*>/gi, '\n');
-
-        // Links
-        md = md.replace(/<a[^>]*href=["']([^"']+)["'][^>]*>(.*?)<\/a>/gi, '[$2]($1)');
-
-        // Strip remaining tags
-        md = md.replace(/<\/?[^>]+>/g, '');
-
-        // Basic entities
-        const entities = {
-            '&nbsp;': ' ',
-            '&amp;': '&',
-            '&lt;': '<',
-            '&gt;': '>',
-            '&quot;': '"',
-            '&#39;': '\''
-        };
-        Object.keys(entities).forEach(key => {
-            md = md.split(key).join(entities[key]);
-        });
-
-        return md.replace(/\s+\n/g, '\n').trim();
     }
 }
 
@@ -205,212 +153,6 @@ class JobGistService {
 const markdownJobFormatter = new MarkdownJobFormatter();
 const jobGistService = new JobGistService(markdownJobFormatter);
 
-function extractJobDataFromPage(url) {
-    const jobData = {
-        state: '',
-        suburbs: '',
-        jobTitle: '',
-        company: '',
-        salary: '',
-        postedDate: '',
-        contactEmail: '',
-        url: url,
-        seekUrl: url,
-        jobHtml: '',
-        descriptionHtml: ''
-    };
-
-    const titleSelectors = [
-        'h1[data-automation="job-detail-title"]',
-        'h1.job-title',
-        '[data-testid="job-title"]',
-        'h1'
-    ];
-    for (const selector of titleSelectors) {
-        const element = document.querySelector(selector);
-        if (element && element.textContent?.trim()) {
-            jobData.jobTitle = element.textContent.trim();
-            break;
-        }
-    }
-
-    const companySelectors = [
-        '[data-automation="advertiser-name"]',
-        'span[data-automation="job-detail-company"]',
-        '[data-testid="advertiser-name"]',
-        '.advertiser-name'
-    ];
-    for (const selector of companySelectors) {
-        const element = document.querySelector(selector);
-        if (element && element.textContent?.trim()) {
-            jobData.company = element.textContent.trim();
-            break;
-        }
-    }
-
-    const locationSelectors = [
-        '[data-automation="job-detail-location"]',
-        'span[data-automation="job-detail-location"] span',
-        '[data-testid="job-detail-location"]',
-        '.location-info'
-    ];
-    for (const selector of locationSelectors) {
-        const element = document.querySelector(selector);
-        if (element && element.textContent?.trim()) {
-            const locationText = element.textContent.trim();
-            const parts = locationText.split(',').map(p => p.trim());
-
-            // if (parts.length === 2) {
-            //     jobData.suburbs = parts[0];
-            //     const statePart = parts[1];
-            //     if (statePart.includes('NSW')) jobData.state = 'Sydney (NSW)';
-            //     else if (statePart.includes('VIC')) jobData.state = 'Melbourne (VIC)';
-            //     else if (statePart.includes('QLD')) jobData.state = 'Brisbane (QLD)';
-            //     else jobData.state = statePart;
-            // } else if (parts.length === 1) {
-            //     jobData.state = parts[0];
-            // }
-
-            function formatLocation(statePart) {
-                const stateMap = {
-                    'NSW': 'Sydney (NSW)',
-                    'VIC': 'Melbourne (VIC)',
-                    'QLD': 'Brisbane (QLD)'
-                };
-                const match = Object.keys(stateMap).find(key => statePart.includes(key));
-                return match ? stateMap[match] : statePart;
-
-            }
-
-            if (parts.length === 2) {
-                jobData.suburbs = parts[0];
-                jobData.state = formatLocation(parts[1]);
-            } else if (parts.length === 1) {
-                jobData.state = formatLocation(parts[0]);
-            }
-
-
-            break;
-        }
-    }
-
-    const salarySelectors = [
-        '[data-automation="job-detail-salary"]',
-        'span[data-automation="job-detail-salary"]',
-        '[data-testid="job-salary"]',
-        '.salary-info'
-    ];
-    for (const selector of salarySelectors) {
-        const element = document.querySelector(selector);
-        if (element && element.textContent?.trim()) {
-            jobData.salary = element.textContent.trim();
-            break;
-        }
-    }
-
-    // // Default salary if missing
-    // if (!jobData.salary) {
-    //     jobData.salary = '-';
-    // }
-
-    // Try to locate the main job content container first
-    const jobContainer = document.querySelector('[data-automation="job-view-container"]') || document;
-    if (jobContainer) {
-        jobData.jobHtml = jobContainer.innerHTML;
-    }
-
-    //These selectors below are inaccurate, better to scope within the jobContainer only, find regex match
-
-    // const dateSelectors = [
-    //     'span[data-automation="job-detail-date"]',
-    //     '[data-automation="job-detail-date"]',
-    //     'time',
-    //     '.posted-date'
-    // ];
-
-    // Loop through selectors within the scoped container
-    // for (const selector of dateSelectors) {
-    //     const element = jobContainer.querySelector(selector);
-    //     if (element && element.textContent?.trim()) {
-    //         jobData.postedDate = element.textContent.trim();
-    //         break;
-    //     }
-    // }
-
-    function getActualDate(postedString) {
-
-        const now = new Date();
-        const match = postedString.match(/Posted\s+(\d+).*?([a-z]+)/i);
-
-        if (match) {
-            const num = parseInt(match[1], 10);
-            const unit = match[2];
-
-            if (unit === 'd') {
-                now.setDate(now.getDate() - num);
-            }
-
-            return now.toLocaleDateString('en-GB', {
-                day: 'numeric',
-                month: 'short',
-                year: 'numeric'
-            });
-        }
-
-        return postedString;
-    }
-
-    // Fallback: if nothing found, perform a lightweight regex scan inside the same container
-    const textMatch = [...jobContainer.querySelectorAll('span, p, div')]
-        .map(e => e.innerText.trim())
-        .find(t => /^Posted\s+\d+\w*\+?\s+ago/i.test(t));
-
-    if (textMatch) jobData.postedDate = getActualDate(textMatch);
-
-    function extractEmailFromDescription() {
-        const jobDescriptionSelectors = [
-            '[data-automation="jobAdDetails"]',
-            '[data-automation="jobDescription"]',
-            '.job-description',
-            '#jobDetailsSection',
-            'article',
-            'main'
-        ];
-
-        let descriptionElement = null;
-        for (const selector of jobDescriptionSelectors) {
-            descriptionElement = document.querySelector(selector);
-            if (descriptionElement) break;
-        }
-
-        if (!descriptionElement) {
-            descriptionElement = document.body;
-        }
-
-        const descriptionText = descriptionElement ? descriptionElement.innerText : '';
-        if (descriptionElement) {
-            jobData.descriptionHtml = descriptionElement.innerHTML;
-        }
-
-        const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g;
-        const emails = descriptionText.match(emailRegex);
-
-        if (emails && emails.length > 0) {
-            return emails[0];
-        }
-
-        return '';
-    }
-
-    jobData.contactEmail = extractEmailFromDescription();
-
-    if (!jobData.descriptionHtml && jobContainer) {
-        jobData.descriptionHtml = jobContainer.innerHTML;
-    }
-
-    return jobData;
-
-}
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'startMultiExtraction') {
@@ -442,7 +184,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             .then(data => sendResponse({ data }))
             .catch(error => sendResponse({ error: error.message }));
         return true;
-    }
+    } 
     return true;
 });
 
@@ -672,6 +414,32 @@ async function handleMultiExtraction(urls) {
     });
 }
 
+function getJobFromContentScript(tabId) {
+    return new Promise((resolve, reject) => {
+        chrome.tabs.sendMessage(
+            tabId,
+            { action: 'extractJobMarkdown' },
+            (response) => {
+                if (chrome.runtime.lastError) {
+                    reject(new Error(chrome.runtime.lastError.message));
+                    return;
+                }
+                if (!response || !response.success) {
+                    reject(new Error((response && response.error) ? response.error.message : 'No response from content script'));
+                    return;
+                }
+                const job = response.markdownJobData ?? response.job;
+                if (!job) {
+                    reject(new Error('Content script returned no job data'));
+                    return;
+                }
+                resolve(job);
+            }
+        );
+    });
+}
+
+
 async function extractSingleJob(url, index) {
     console.log(`[${index}] Starting extraction for:`, url);
 
@@ -714,13 +482,10 @@ async function extractSingleJob(url, index) {
             }
 
             console.log(`[${index}] Injecting script...`);
-            const resultArr = await scripting.execute({
-                target: { tabId },
-                func: extractJobDataFromPage,
-                args: [url]
-            });
 
-            const result = resultArr?.[0]?.result;
+            // Get job data from content script
+            const result = await getJobFromContentScript(tabId);
+
             if (!result) throw new Error("No data extracted from page");
 
             console.log(`[${index}] Extraction successful`);
