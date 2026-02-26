@@ -223,6 +223,51 @@ function extractJobFromCard(card, website, cardIndex) {
     }
 }
 
+
+function getActualPostedDate(postedString) {
+    if (!postedString || typeof postedString !== 'string') return '';
+    const trimmed = postedString.trim();
+    const now = new Date();
+
+    const dayMatch = trimmed.match(/Posted\s+(\d+)\s*d(?:ay)?s?\s*ago/i) || trimmed.match(/Posted\s+(\d+)d\s*ago/i);
+    if (dayMatch) {
+        const num = parseInt(dayMatch[1], 10);
+        now.setDate(now.getDate() - num);
+        return now.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+   
+    return trimmed;
+}
+
+
+function getJobDescriptionContainer() {
+
+    const selectors = [
+        '[data-automation="jobAdDetails"]',
+        '[data-automation="job-detail-description"]',
+        '[data-automation="jobDescription"]',
+        '[data-automation="job-detail-description-html"]',
+        '.job-description',
+        '[data-automation="job-content"]'
+    ];
+    for (const selector of selectors) {
+        const jobDescriptionEl = document.querySelector(selector);
+        if (jobDescriptionEl && jobDescriptionEl.textContent && jobDescriptionEl.textContent.trim().length > 20) {
+            return jobDescriptionEl;
+        }
+    }
+
+    return document.body;
+}
+
+
+function extractEmailFromText(text) {
+    if (!text || typeof text !== 'string') return '';
+    const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g;
+    const match = text.match(emailRegex);
+    return match ? match[0] : '';
+}
+
 function extractSingleJobPageData() {
     console.log('Extracting job data from:', window.location.href);
 
@@ -233,6 +278,7 @@ function extractSingleJobPageData() {
         company: '',
         salary: '',
         postedDate: '',
+        contactEmail: '',
         url: window.location.href
     };
 
@@ -311,13 +357,31 @@ function extractSingleJobPageData() {
         'time',
         '.posted-date'
     ];
+    let rawDateText = '';
     for (const selector of dateSelectors) {
         const element = document.querySelector(selector);
         if (element && element.textContent?.trim()) {
-            jobData.postedDate = element.textContent.trim();
+            rawDateText = element.textContent.trim();
             break;
         }
     }
+    if (!rawDateText) {
+        const jobView = document.querySelector('[data-automation="job-view-container"]') || document.body;
+        const spans = jobView.querySelectorAll('span, p, div');
+        for (const el of spans) {
+            const t = (el.textContent || '').trim();
+            if (/^Posted\s+\d+\s*(d|days?|hours?|weeks?|months?)\s*ago/i.test(t)) {
+                rawDateText = t;
+                break;
+            }
+        }
+    }
+    jobData.postedDate = getActualPostedDate(rawDateText) || rawDateText || '';
+
+    // Contact email: search within job listing (scoped description) only
+    const descContainer = getJobDescriptionContainer();
+    const jobListingText = descContainer ? descContainer.textContent || '' : (document.body && document.body.innerText || '');
+    jobData.contactEmail = extractEmailFromText(jobListingText);
 
     if (!jobData.salary) {
         jobData.salary = '-';
@@ -326,6 +390,33 @@ function extractSingleJobPageData() {
     console.log('Extracted job data:', jobData);
     return jobData;
 }
+
+// ========================
+// Job Markdown Extraction (summary job data + job description)
+//=========================
+function extractJobPageDataWithMarkdown() {
+    const summaryJobData = extractSingleJobPageData();
+
+    const jobDescriptionEl = getJobDescriptionContainer();
+    const jobDescriptionHtml = jobDescriptionEl ?? '';
+
+    const turndownService = new TurndownService({
+        headingStyle: 'atx',
+        bulletListMarker: '-'
+    });
+
+    const descriptionMarkdown = jobDescriptionHtml ? turndownService.turndown(jobDescriptionHtml) : '';
+
+    return {
+        ...summaryJobData,
+        jobDescriptionHtml,
+        descriptionMarkdown
+    };
+}
+
+
+
+
 
 function scrapeSeekJobs() {
     const jobs = [];
@@ -468,6 +559,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             sendResponse({ success: true, data: jobData });
         } catch (error) {
             console.error('Error extracting job data:', error);
+            sendResponse({ success: false, error: error.message });
+        }
+    } else if (request.action === 'extractJobMarkdown') {
+        try {
+            const markdownJobData = extractJobPageDataWithMarkdown();
+            sendResponse({ success: true, markdownJobData});
+        } catch (error) {
+            console.error('Error extracting job with markdown:', error);
             sendResponse({ success: false, error: error.message });
         }
     }

@@ -37,7 +37,8 @@
                 "https://www.seek.com.au/*"
             ],
             "js": [
-                "content.js"
+                "content.js",
+                "library/turndown.js"
             ]
         }
     ],
