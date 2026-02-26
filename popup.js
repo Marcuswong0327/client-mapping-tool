@@ -878,4 +878,62 @@ document.addEventListener('DOMContentLoaded', function () {
             enrichBtn.disabled = false;
         }
     });
+
+    // ============================================================================
+    // COPY URLs TOOL
+    // ============================================================================
+    const urlsTextarea = document.getElementById('urlsTextarea');
+    const copyUrlsBtn = document.getElementById('copyUrlsBtn');
+    const pasteUrlsBtn = document.getElementById('pasteUrlsBtn');
+    const copyStatusEl = document.getElementById('copyStatus');
+
+    copyUrlsBtn.addEventListener('click', async function () {
+        try {
+            const tabs = await chrome.tabs.query({ currentWindow: true });
+            if (tabs.length === 0) {
+                copyStatusEl.textContent = 'No tabs found in current window';
+                copyStatusEl.className = 'status-message error';
+                return;
+            }
+            const urls = tabs.map(tab => tab.url).filter(url => url && url.startsWith('http'));
+            if (urls.length === 0) {
+                copyStatusEl.textContent = 'No valid URLs in current tabs';
+                copyStatusEl.className = 'status-message error';
+                return;
+            }
+            const urlsText = urls.join('\n');
+            urlsTextarea.value = urlsText;
+            await navigator.clipboard.writeText(urlsText);
+            copyStatusEl.textContent = `Copied ${urls.length} URL(s) to clipboard`;
+            copyStatusEl.className = 'status-message success';
+        } catch (error) {
+            copyStatusEl.textContent = 'Error: ' + error.message;
+            copyStatusEl.className = 'status-message error';
+        }
+    });
+
+    pasteUrlsBtn.addEventListener('click', async function () {
+        const text = urlsTextarea.value.trim();
+        if (!text) {
+            copyStatusEl.textContent = 'No URLs in text box. Copy URLs first or paste some.';
+            copyStatusEl.className = 'status-message error';
+            return;
+        }
+        const urls = text.split(/\r?\n/).map(u => u.trim()).filter(u => u.length > 0 && u.startsWith('http'));
+        if (urls.length === 0) {
+            copyStatusEl.textContent = 'No valid URLs to open';
+            copyStatusEl.className = 'status-message error';
+            return;
+        }
+        try {
+            for (const url of urls) {
+                await chrome.tabs.create({ url: url });
+            }
+            copyStatusEl.textContent = `Opened ${urls.length} URL(s) in new tabs`;
+            copyStatusEl.className = 'status-message success';
+        } catch (error) {
+            copyStatusEl.textContent = 'Error opening URLs: ' + error.message;
+            copyStatusEl.className = 'status-message error';
+        }
+    });
 });
