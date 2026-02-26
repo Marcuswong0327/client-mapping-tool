@@ -58,8 +58,10 @@ class MarkdownJobFormatter {
         const originalUrl = job.seekUrl || job.url;
         if (originalUrl) summaryLines.push(`- Original URL: ${originalUrl}`);
 
+        const contactEmail = job.email || job.contactEmail; 
+        if(contactEmail) summaryLines.push(`-Email: ${contactEmail}`);
+
         if (summaryLines.length > 0) {
-            lines.push('**Summary**');
             lines.push('');
             lines.push(...summaryLines);
             lines.push('');
@@ -131,14 +133,13 @@ class GistClient {
     }
 
     async createJobGist(markdown, job) {
-        const safeTitle = (job.jobTitle || 'seek-job')
+        const safeTitle = (job.jobTitle || "Job Info")
             .toLowerCase()
             .replace(/[^a-z0-9]+/g, '-')
-            .replace(/^-+|-+$/g, '') || 'seek-job';
+            .replace(/^-+|-+$/g, '') || "Job Info";
 
         const filename = `${safeTitle}.md`;
         const body = {
-            description: `Seek job: ${job.jobTitle || ''}${job.company ? ` @ ${job.company}` : ''}`,
             public: false,
             files: {}
         };
