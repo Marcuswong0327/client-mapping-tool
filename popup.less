@@ -1,0 +1,429 @@
+// ==========================================
+// 1. VARIABLES
+// ==========================================
+@font-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+// Colors
+@primary:       #007bff;
+@primary-hover: #0056b3;
+@success:       #28a745;
+@success-hover: #218838;
+@danger:        #dc3545;
+@gray-dark:     #333;
+@gray-medium:   #555;
+@gray-light:    #666;
+@gray-lighter:  #888;
+@border-color:  #ddd;
+@bg-light:      #f8f9fa;
+
+// Layout & UI
+@radius-base:   6px;
+@transition:    0.2s;
+
+// ==========================================
+// 2. MIXINS
+// ==========================================
+// Reusable style for all input fields and textareas
+.form-control() {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid @border-color;
+    border-radius: @radius-base;
+    font-size: 13px;
+    font-family: @font-base;
+    transition: border-color @transition;
+
+    &:focus {
+        outline: none;
+        border-color: @primary;
+        // LESS 'fade' function creates rgba automatically!
+        box-shadow: 0 0 0 2px fade(@primary, 10%); 
+    }
+}
+
+// Reusable style for buttons
+.btn-base() {
+    flex: 1;
+    padding: 10px 16px;
+    border: none;
+    border-radius: @radius-base;
+    font-size: 14px;
+    font-weight: 500;
+    color: white;
+    transition: background-color @transition;
+
+    &:disabled {
+        background-color: #6c757d;
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+}
+
+// ==========================================
+// 3. GLOBAL STYLES
+// ==========================================
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: @font-base;
+    width: 520px;
+    min-width: 520px;
+    max-height: 700px;
+    overflow-y: auto;
+    background-color: @bg-light;
+}
+
+p { 
+    cursor: pointer;
+    transition: all @transition;
+}
+
+// ==========================================
+// 4. COMPONENTS (Nesting Applied)
+// ==========================================
+
+.container {
+    padding: 20px;
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 20px;
+
+    h2 {
+        color: @gray-dark;
+        font-size: 18px;
+        font-weight: 600;
+    }
+}
+
+.input-section {
+    margin-bottom: 20px;
+
+    label {
+        display: block;
+        margin-bottom: 6px;
+        color: @gray-medium;
+        font-size: 14px;
+        font-weight: 500;
+    }
+}
+
+// Grouping all form inputs using the mixin
+#jobUrl {
+    .form-control();
+    font-size: 14px; // Overriding the mixin's 13px default
+}
+
+#multiUrls,
+#apolloApiKey,
+#findymailApiKey,
+#linkedinUrls,
+#urlsTextarea {
+    .form-control();
+    resize: vertical;
+}
+
+// Status & Progress
+.status-section {
+    margin-bottom: 10px;
+}
+
+.status-message {
+    font-size: 13px;
+    color: @gray-light;
+    margin-bottom: 8px;
+
+    &.success { color: @success; }
+    &.error   { color: @danger; }
+    &.loading { color: @primary; }
+}
+
+.progress-bar {
+    width: 100%;
+    height: 4px;
+    background-color: #e9ecef;
+    border-radius: 2px;
+    overflow: hidden;
+
+    .progress-fill {
+        height: 100%;
+        background-color: @primary;
+        width: 0%;
+        transition: width 0.3s ease;
+    }
+}
+
+.progress-details {
+    font-size: 12px;
+    color: @gray-lighter;
+    margin-top: 6px;
+}
+
+// Buttons
+.button-section {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.extract-btn {
+    .btn-base();
+    background-color: @primary;
+
+    &:hover:not(:disabled) {
+        background-color: @primary-hover;
+    }
+}
+
+.export-btn {
+    .btn-base();
+    background-color: @success;
+
+    &:hover:not(:disabled) {
+        background-color: @success-hover;
+    }
+}
+
+.divider {
+    height: 1px;
+    background: linear-gradient(to right, transparent, @border-color, transparent);
+    margin: 25px 0;
+}
+
+// Dropzone
+.master-upload-section {
+    margin-top: 16px;
+}
+
+.dropzone {
+    width: 100%;
+    padding: 14px 12px;
+    border: 2px dashed #cfd6dd;
+    border-radius: 10px;
+    background-color: #ffffff;
+    user-select: none;
+
+    &.dragover {
+        border-color: @primary;
+        background-color: #f3f8ff;
+    }
+
+    &-title { // LESS feature: Appends to parent (.dropzone-title)
+        font-size: 13px;
+        color: @gray-dark;
+        font-weight: 600;
+        margin-bottom: 6px;
+    }
+
+    &-meta {
+        font-size: 12px;
+        color: @gray-light;
+        word-break: break-word;
+    }
+}
+
+// Sections
+.section-header {
+    margin-bottom: 15px;
+
+    h3 {
+        color: @gray-dark;
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+
+    .section-description {
+        font-size: 12px;
+        color: @gray-lighter;
+    }
+}
+
+.multi-url-section { margin-top: 20px; }
+.results-section { text-align: center; }
+.job-count { font-size: 13px; color: @gray-light; font-weight: 500; }
+
+// Error Handling UI
+.error-preview-section {
+    margin-top: 15px;
+}
+
+.error-toggle-btn {
+    width: 100%;
+    padding: 10px 12px;
+    background-color: white;
+    border: 1px solid @border-color;
+    border-radius: @radius-base;
+    font-size: 13px;
+    font-weight: 500;
+    color: @gray-medium;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all @transition;
+
+    &:hover {
+        background-color: @bg-light;
+        border-color: #bbb;
+    }
+}
+
+#errorToggleIcon {
+    font-size: 10px;
+    transition: transform 0.3s;
+    display: inline-block;
+
+    &.expanded {
+        transform: rotate(-180deg);
+    }
+}
+
+.error-preview-content {
+    margin-top: 10px;
+    background-color: white;
+    border: 1px solid @border-color;
+    border-radius: @radius-base;
+    padding: 12px;
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.error-preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e9ecef;
+
+    .error-count-text {
+        font-size: 12px;
+        color: @gray-light;
+        font-weight: 500;
+    }
+}
+
+.copy-urls-btn {
+    padding: 6px 12px;
+    background-color: @primary;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color @transition;
+
+    &:hover { background-color: @primary-hover; }
+    &:active { background-color: #004494; }
+}
+
+.error-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.error-item {
+    background-color: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+    padding: 10px;
+    font-size: 12px;
+
+    .error-url {
+        color: @gray-dark;
+        word-break: break-all;
+        font-weight: 500;
+        margin-bottom: 4px;
+        display: block;
+    }
+
+    .error-reason {
+        color: @danger;
+        font-size: 11px;
+        margin-top: 4px;
+    }
+}
+
+// Tool Navigation
+.tool-nav {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #e9ecef;
+    padding-bottom: 10px;
+}
+
+.tool-btn {
+    flex: 1;
+    padding: 8px 12px;
+    border: none;
+    border-radius: @radius-base @radius-base 0 0;
+    background-color: transparent;
+    color: @gray-light;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all @transition;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+
+    &:hover {
+        background-color: #f0f0f0;
+        color: @gray-dark;
+    }
+
+    &.active {
+        color: @primary;
+        border-bottom-color: @primary;
+        background-color: transparent;
+    }
+}
+
+.tool-section {
+    display: none;
+
+    &.active {
+        display: block;
+    }
+}
+
+// Specific Progress Bar for Enrichment
+#enrichment-progress {
+    width: 100%;
+    height: 8px;
+    border-radius: 4px;
+    background-color: #e9ecef;
+    margin-top: 8px;
+    margin-bottom: 8px;
+
+    &::-webkit-progress-bar {
+        background-color: #e9ecef;
+        border-radius: 4px;
+    }
+
+    &::-webkit-progress-value {
+        background-color: @primary;
+        border-radius: 4px;
+        transition: width 0.3s ease;
+    }
+
+    &::-moz-progress-bar {
+        background-color: @primary;
+        border-radius: 4px;
+    }
+}
+
+#enrichment-stats {
+    font-size: 12px;
+    color: @success;
+    font-weight: 500;
+    margin-top: 6px;
+}

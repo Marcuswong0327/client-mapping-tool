@@ -380,12 +380,9 @@ function extractSingleJobPageData() {
 
     // Contact email: search within job listing (scoped description) only
     const descContainer = getJobDescriptionContainer();
-    const jobListingText = descContainer ? descContainer.textContent || '' : (document.body && document.body.innerText || '');
+    const jobListingText = descContainer ? descContainer.textContent : (document.body && document.body.innerText);
     jobData.contactEmail = extractEmailFromText(jobListingText);
 
-    if (!jobData.salary) {
-        jobData.salary = '-';
-    }
 
     console.log('Extracted job data:', jobData);
     return jobData;
@@ -397,7 +394,7 @@ function extractSingleJobPageData() {
 function extractJobPageDataWithMarkdown() {
     const summaryJobData = extractSingleJobPageData();
 
-    const jobDescriptionEl = getJobDescriptionContainer();
+    const jobDescriptionEl = getJobDescriptionContainer();        
     const jobDescriptionHtml = jobDescriptionEl ?? '';
 
     const turndownService = new TurndownService({
@@ -426,9 +423,8 @@ function scrapeSeekJobs() {
 
     jobCards.forEach((card, index) => {
         const jobData = extractJobFromCard(card, 'seek', index);
-        if (jobData) {
-            jobs.push(jobData);
-        }
+        jobs.push(jobData);
+
     });
 
     console.log(`Extracted ${jobs.length} valid jobs from current Seek page`);

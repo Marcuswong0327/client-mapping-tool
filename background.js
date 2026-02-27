@@ -144,7 +144,7 @@ class JobGistService {
 
         job.seekUrl = job.seekUrl || job.url;
         job.gistUrl = gistUrl;
-        job.url = gistUrl; // used by CSV export
+        job.url= gistUrl; // used by CSV export
 
         return job;
     }
@@ -428,7 +428,7 @@ function getJobFromContentScript(tabId) {
                     reject(new Error((response && response.error) ? response.error.message : 'No response from content script'));
                     return;
                 }
-                const job = response.markdownJobData ?? response.job;
+                const job = response.markdownJobData ?? null;
                 if (!job) {
                     reject(new Error('Content script returned no job data'));
                     return;

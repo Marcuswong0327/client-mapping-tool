@@ -417,10 +417,9 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!str) return str;
         return str
             .replace(/â€"/g, "-")
-            .replace(/â€"/g, "-")
             .replace(/Â/g, "")
             .replace(/–/g, "-")
-            .replace(/—/g, "-");
+            .replace(/—/g, "-")
     }
 
     function exportToExcel(jobs, filename) {
