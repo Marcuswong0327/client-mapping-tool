@@ -1,9 +1,5 @@
-// ==========================================
-// 1. VARIABLES
-// ==========================================
 @font-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
-// Colors
 @primary:       #007bff;
 @primary-hover: #0056b3;
 @success:       #28a745;
@@ -16,13 +12,10 @@
 @border-color:  #ddd;
 @bg-light:      #f8f9fa;
 
-// Layout & UI
 @radius-base:   6px;
 @transition:    0.2s;
 
-// ==========================================
-// 2. MIXINS
-// ==========================================
+
 // Reusable style for all input fields and textareas
 .form-control() {
     width: 100%;
@@ -36,7 +29,6 @@
     &:focus {
         outline: none;
         border-color: @primary;
-        // LESS 'fade' function creates rgba automatically!
         box-shadow: 0 0 0 2px fade(@primary, 10%); 
     }
 }
@@ -59,9 +51,8 @@
     }
 }
 
-// ==========================================
-// 3. GLOBAL STYLES
-// ==========================================
+
+// global styles
 * {
     box-sizing: border-box;
     margin: 0;
@@ -82,9 +73,8 @@ p {
     transition: all @transition;
 }
 
-// ==========================================
-// 4. COMPONENTS (Nesting Applied)
-// ==========================================
+
+// components
 
 .container {
     padding: 20px;
@@ -113,10 +103,10 @@ p {
     }
 }
 
-// Grouping all form inputs using the mixin
+
 #jobUrl {
     .form-control();
-    font-size: 14px; // Overriding the mixin's 13px default
+    font-size: 14px; 
 }
 
 #multiUrls,
@@ -213,7 +203,7 @@ p {
         background-color: #f3f8ff;
     }
 
-    &-title { // LESS feature: Appends to parent (.dropzone-title)
+    &-title { 
         font-size: 13px;
         color: @gray-dark;
         font-weight: 600;
@@ -395,7 +385,7 @@ p {
     }
 }
 
-// Specific Progress Bar for Enrichment
+// Progress Bar 
 #enrichment-progress {
     width: 100%;
     height: 8px;
