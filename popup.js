@@ -33,6 +33,17 @@ let multiExtractedJobs = [];
 let extractionErrors = [];
 let isExporting = false; // Flag to prevent double downloads
 
+//////////////////////
+// DATA ENRICHER TOOL
+////////////////////
+const apolloApiKeyInput = document.getElementById('apolloApiKey');
+const findymailApiKeyInput = document.getElementById('findymailApiKey');
+const linkedinUrlsInput = document.getElementById('linkedinUrls');
+const enricherCopyPasteUrlsBtn = document.getElementById('enricherCopyPasteUrlsBtn');
+const enrichBtn = document.getElementById('enrichBtn');
+const enrichmentStatusEl = document.getElementById('enrichment-status');
+
+
 // Wait DOM load and load Tool Navigation
 document.addEventListener('DOMContentLoaded', function () {
     // Tool Navigation
@@ -846,33 +857,30 @@ new MultipleSeekURLJobExtractor();
 
 
 
-class DataEnricher { };
-
-class CopyURLs { };
-
-
-
-document.addEventListener('DOMContentLoaded', function () {
-
-    //////////////////////
-    // DATA ENRICHER TOOL
-    ////////////////////
-    const apolloApiKeyInput = document.getElementById('apolloApiKey');
-    const findymailApiKeyInput = document.getElementById('findymailApiKey');
-    const linkedinUrlsInput = document.getElementById('linkedinUrls');
-    const enricherCopyPasteUrlsBtn = document.getElementById('enricherCopyPasteUrlsBtn');
-    const enrichBtn = document.getElementById('enrichBtn');
-    const enrichmentStatusEl = document.getElementById('enrichment-status');
+class DataEnricher {
+    constructor() {
+        super();
+        const run = () => {
+            this._copyPasteLinkedinURLs();
+            this._loadAPIKey();
+        };
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+            run();
+        } else {
+            document.addEventListener('DOMContentLoaded', run);
+        }
+    };
 
     // Function to validate LinkedIn person profile URL
-    function isValidLinkedInProfileUrl(url) {
+    _isValidLinkedInProfileUrl(url) {
         if (!url || !url.startsWith('http')) {
             return false;
         }
         return url.includes('linkedin.com/in/');
     }
 
-    enricherCopyPasteUrlsBtn.addEventListener('click', async function () {
+    _copyPasteLinkedinURLs(){
+        enricherCopyPasteUrlsBtn.addEventListener('click', async function () {
         try {
             const tabs = await chrome.tabs.query({ currentWindow: true });
 
@@ -884,7 +892,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const linkedInUrls = tabs
                 .map(tab => tab.url)
-                .filter(url => isValidLinkedInProfileUrl(url));
+                .filter(url => this_isValidLinkedInProfileUrl(url));
 
             if (linkedInUrls.length === 0) {
                 enrichmentStatusEl.textContent = 'No LinkedIn profile URLs found in current tabs';
@@ -901,6 +909,9 @@ document.addEventListener('DOMContentLoaded', function () {
             enrichmentStatusEl.className = 'status-message error';
         }
     });
+    };
+
+    _loadAPIKey(){
 
     // Load saved API keys
     chrome.storage.local.get(['apolloApiKey', 'findymailApiKey'], function (result) {
@@ -920,6 +931,22 @@ document.addEventListener('DOMContentLoaded', function () {
     findymailApiKeyInput.addEventListener('input', function () {
         chrome.storage.local.set({ findymailApiKey: findymailApiKeyInput.value });
     });
+
+    }
+    
+
+
+};
+
+class CopyURLs { };
+
+
+
+document.addEventListener('DOMContentLoaded', function () {
+
+    
+
+//Investigate need of linkedinUrlCount
 
     // LinkedIn URL validation and count display
     const linkedinUrlCount = document.createElement('div');
