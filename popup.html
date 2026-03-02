@@ -8,170 +8,157 @@
     <link rel="stylesheet" href="popup.css">
 </head>
 
-<body>
-    <div class="container">
-        <div class="header">
-            <h2>BD Client Map 3.0</h2>
-        </div>
+<body class="antialiased">
+    <div class="container p-5">
+        <header class="header text-center mb-5">
+            <h2 class="text-gray-800 text-lg font-semibold">BD Client Map 3.0</h2>
+        </header>
 
-        <!-- Tool Navigation -->
-        <div class="tool-nav">
-            <button class="tool-btn active" data-tool="job-extractor">Job Extractor</button>
-            <button class="tool-btn" data-tool="data-enricher">BD Stakeholders</button>
-            <button class="tool-btn" data-tool="copy-urls">Copy URLs</button>
+        <!-- Tool Navigation (Tailwind: flex, gap, border, padding) -->
+        <div class="tool-nav flex gap-1.5 mb-5 border-b-2 border-gray-200 pb-2.5">
+            <button type="button" class="tool-btn active flex-1 py-2 px-3 rounded-t-md border-none bg-transparent text-gray-500 text-sm font-medium cursor-pointer transition-all duration-200 border-b-2 border-transparent -mb-0.5 hover:bg-gray-100 hover:text-gray-800" data-tool="job-extractor">Job Extractor</button>
+            <button type="button" class="tool-btn flex-1 py-2 px-3 rounded-t-md border-none bg-transparent text-gray-500 text-sm font-medium cursor-pointer transition-all duration-200 border-b-2 border-transparent -mb-0.5 hover:bg-gray-100 hover:text-gray-800" data-tool="data-enricher">BD Stakeholders</button>
+            <button type="button" class="tool-btn flex-1 py-2 px-3 rounded-t-md border-none bg-transparent text-gray-500 text-sm font-medium cursor-pointer transition-all duration-200 border-b-2 border-transparent -mb-0.5 hover:bg-gray-100 hover:text-gray-800" data-tool="copy-urls">Copy URLs</button>
         </div>
-
 
         <!-- Multi URLs Job Extractor -->
         <div id="job-extractor-tool" class="tool-section active">
-
-            <div class="multi-url-section">
-                <div class="section-header">
-                    <h3>Get Job Info From Multiple Seek Job URLs</h3>
-                    <p class="section-description">Step 1: Click "Copy Paste" button to paste Seek URLs</p>
-                    <p class="section-description">Step 2: Click "Extract" button and wait for autodownload</p>
+            <div class="multi-url-section mt-5">
+                <div class="section-header mb-4">
+                    <h3 class="text-gray-800 text-base font-semibold mb-1">Get Job Info From Multiple Seek Job URLs</h3>
+                    <p class="section-description text-xs text-gray-500">Step 1: Click "Copy Paste" button to paste Seek URLs</p>
+                    <p class="section-description text-xs text-gray-500">Step 2: Click "Extract" button and wait for autodownload</p>
                 </div>
 
-                <div class="input-section">
-                    <label for="multiUrls"></label>
-                    <textarea id="multiUrls" rows="2" placeholder="https://www.seek.com.au/job/consultant_1"></textarea>
+                <div class="input-section mb-5">
+                    <label for="multiUrls" class="block mb-1.5 text-gray-600 text-sm font-medium"></label>
+                    <textarea id="multiUrls" rows="2" class="w-full p-2.5 border border-gray-300 rounded-md text-sm font-sans transition-colors focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 resize-y" placeholder="https://www.seek.com.au/job/consultant_1"></textarea>
                 </div>
 
-                <div class="status-section">
-                    <div id="multiStatus" class="status-message">Ready to extract</div>
-                    <div id="multiProgress" class="progress-bar">
+                <div class="status-section mb-2.5">
+                    <div id="multiStatus" class="status-message text-sm text-gray-500 mb-2">Ready to extract</div>
+                    <div id="multiProgress" class="progress-bar w-full h-1 bg-gray-200 rounded overflow-hidden">
                         <div id="multiProgressFill" class="progress-fill"></div>
                     </div>
-                    <div id="multiDetails" class="progress-details"></div>
+                    <div id="multiDetails" class="progress-details text-xs text-gray-400 mt-1.5"></div>
                 </div>
 
-
-                <div class="button-section">
-                    <button id="copyPasteUrlsBtn" class="export-btn">Copy Paste URLs</button>
-                    <button id="multiExtractBtn" class="extract-btn">Extract from URLs</button>
+                <div class="button-section flex gap-2.5 mb-4">
+                    <button type="button" id="copyPasteUrlsBtn" class="export-btn flex-1 py-2.5 px-4 rounded-md text-sm font-medium text-white bg-success transition-colors hover:bg-success-hover disabled:bg-gray-500 disabled:cursor-not-allowed disabled:opacity-60">Copy Paste URLs</button>
+                    <button type="button" id="multiExtractBtn" class="extract-btn flex-1 py-2.5 px-4 rounded-md text-sm font-medium text-white bg-primary transition-colors hover:bg-primary-hover disabled:bg-gray-500 disabled:cursor-not-allowed disabled:opacity-60">Extract from URLs</button>
                 </div>
-
-            <div class="divider"></div>
-
-            <!--Single Seek Search URL Extractor-->
-            <div class="input-section">
-                <label for="jobUrl">Double Check Seek Search URLs below (AutoPlaced)</label>
-                <input type="url" id="jobUrl" placeholder="https://www.seek.com.au/linktal-jobs-intern/" />
             </div>
 
-            <div class="status-section">
-                <div id="status" class="status-message">Click button below and wait for autodownload</div>
-                <div id="progress" class="progress-bar">
+            <div class="divider h-px my-6 bg-gray-200"></div>
+
+            <!-- Single Seek Search URL Extractor -->
+            <div class="input-section mb-5">
+                <label for="jobUrl" class="block mb-1.5 text-gray-600 text-sm font-medium">Double Check Seek Search URLs below (AutoPlaced)</label>
+                <input type="url" id="jobUrl" class="w-full p-2.5 border border-gray-300 rounded-md text-sm font-sans transition-colors focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" placeholder="https://www.seek.com.au/linktal-jobs-intern/" />
+            </div>
+
+            <div class="status-section mb-2.5">
+                <div id="status" class="status-message text-sm text-gray-500 mb-2">Click button below and wait for autodownload</div>
+                <div id="progress" class="progress-bar w-full h-1 bg-gray-200 rounded overflow-hidden">
                     <div id="progressFill" class="progress-fill"></div>
                 </div>
             </div>
 
-            <div class="button-section">
-                <button id="extractBtn" class="extract-btn">Extract & Export Jobs</button>
-                <!--button id="exportBtn" class="export-btn" disabled>Export to Excel</button-->
+            <div class="button-section flex gap-2.5 mb-4">
+                <button type="button" id="extractBtn" class="extract-btn flex-1 py-2.5 px-4 rounded-md text-sm font-medium text-white bg-primary transition-colors hover:bg-primary-hover disabled:bg-gray-500 disabled:cursor-not-allowed disabled:opacity-60">Extract & Export Jobs</button>
             </div>
 
-
-            
-
-            <!--Gists Token & Master file upload section-->
-            
-                <div class="input-section">
-                    <label for="githubGistToken">GitHub Gist Token</label>
-                    <input type="password" id="githubGistToken" />
-                </div>
-
-            <div class="master-upload-section">
-                <div class="section-header">
-                    <h3>Master Stakeholder File</h3>
-                    <p>Excel (.xlsx) format only</p>
-                </div>
-
-                <input id="masterFileInput" type="file" accept=".xlsx" style="display: none;" />
-                <div id="masterDropzone" class="dropzone" role="button" tabindex="0">
-                    <div class="dropzone-title">Drag &amp; drop or click to upload</div>
-                    <div id="masterUploadMeta" class="dropzone-meta">No file yet</div>
-                </div>
-                <div id="masterUploadStatus" class="status-message"></div>
+            <!-- Gists Token & Master file upload section -->
+            <div class="input-section mb-5">
+                <label for="githubGistToken" class="block mb-1.5 text-gray-600 text-sm font-medium">GitHub Gist Token</label>
+                <input type="password" id="githubGistToken" class="w-full p-2.5 border border-gray-300 rounded-md text-sm font-sans transition-colors focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
             </div>
 
-            <!--Error preview for Multi URLs Failed Extraction-->
-            <div id="errorPreviewSection" class="error-preview-section" style="display: none;">
-                <button id="errorToggleBtn" class="error-toggle-btn">
-                    <span id="errorToggleIcon">▼</span>
+            <div class="master-upload-section mt-4">
+                <div class="section-header mb-4">
+                    <h3 class="text-gray-800 text-base font-semibold mb-1">Master Stakeholder File</h3>
+                    <p class="text-xs text-gray-500">Excel (.xlsx) format only</p>
+                </div>
+
+                <input id="masterFileInput" type="file" accept=".xlsx" class="hidden" />
+                <div id="masterDropzone" class="dropzone w-full p-3.5 border-2 border-dashed border-gray-300 rounded-lg bg-white select-none cursor-pointer" role="button" tabindex="0">
+                    <div class="dropzone-title text-sm text-gray-800 font-semibold mb-1.5">Drag &amp; drop or click to upload</div>
+                    <div id="masterUploadMeta" class="dropzone-meta text-xs text-gray-500 break-words">No file yet</div>
+                </div>
+                <div id="masterUploadStatus" class="status-message text-sm text-gray-500 mb-2"></div>
+            </div>
+
+            <!-- Error preview for Multi URLs Failed Extraction -->
+            <div id="errorPreviewSection" class="error-preview-section mt-4" style="display: none;">
+                <button type="button" id="errorToggleBtn" class="error-toggle-btn w-full p-2.5 px-3 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-600 cursor-pointer flex items-center gap-2 transition-all duration-200">
+                    <span id="errorToggleIcon" class="inline-block text-[10px] transition-transform duration-300">▼</span>
                     <span id="errorToggleText">Show Failed URLs</span>
                 </button>
 
-                <div id="errorPreviewContent" class="error-preview-content" style="display: none;">
-                    <div class="error-preview-header">
-                        <span id="errorCount" class="error-count-text"></span>
-                        <button id="copyErrorUrlsBtn" class="copy-urls-btn">Copy All URLs</button>
+                <div id="errorPreviewContent" class="error-preview-content mt-2.5 bg-white border border-gray-300 rounded-md p-3 max-h-[250px] overflow-y-auto" style="display: none;">
+                    <div class="error-preview-header flex justify-between items-center mb-2.5 pb-2 border-b border-gray-200">
+                        <span id="errorCount" class="error-count-text text-xs text-gray-500 font-medium"></span>
+                        <button type="button" id="copyErrorUrlsBtn" class="copy-urls-btn py-1.5 px-3 bg-primary text-white border-none rounded text-xs font-medium cursor-pointer transition-colors hover:bg-primary-hover">Copy All URLs</button>
                     </div>
-                    <div id="errorList" class="error-list"></div>
+                    <div id="errorList" class="error-list flex flex-col gap-2"></div>
                 </div>
             </div>
-        </div>
         </div>
 
         <!-- Data Enricher Tool -->
         <div id="data-enricher-tool" class="tool-section">
-            <div class="section-header">
-                <h3>Finding Stakeholders' Info</h3>
-                <p class="section-description">Step 1: Click "Copy Paste" button to paste LinkedIn URLs </p>
-                <p class="section-description">Step 2: Click "Get Info" button and wait for autodownload </p>
+            <div class="section-header mb-4">
+                <h3 class="text-gray-800 text-base font-semibold mb-1">Finding Stakeholders' Info</h3>
+                <p class="section-description text-xs text-gray-500">Step 1: Click "Copy Paste" button to paste LinkedIn URLs </p>
+                <p class="section-description text-xs text-gray-500">Step 2: Click "Get Info" button and wait for autodownload </p>
             </div>
 
-    
-
-            <div class="input-section">
-                <label for="linkedinUrls">LinkedIn URLs (one per line):</label>
-                <textarea id="linkedinUrls" rows="2" placeholder="https://www.linkedin.com/in/consultant1"></textarea>
+            <div class="input-section mb-5">
+                <label for="linkedinUrls" class="block mb-1.5 text-gray-600 text-sm font-medium">LinkedIn URLs (one per line):</label>
+                <textarea id="linkedinUrls" rows="2" class="w-full p-2.5 border border-gray-300 rounded-md text-sm font-sans transition-colors focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 resize-y" placeholder="https://www.linkedin.com/in/consultant1"></textarea>
             </div>
 
-            <div class="status-section">
-                <div id="enrichment-status" class="status-message">Ready to enrich</div>
-                <progress id="enrichment-progress" class="progress-bar" value="0" max="100"></progress>
-                <div id="enrichment-stats" class="progress-details"></div>
+            <div class="status-section mb-2.5">
+                <div id="enrichment-status" class="status-message text-sm text-gray-500 mb-2">Ready to enrich</div>
+                <progress id="enrichment-progress" value="0" max="100"></progress>
+                <div id="enrichment-stats" class="text-xs text-success font-medium mt-1.5"></div>
             </div>
 
-            <div class="button-section">
-                <button id="enricherCopyPasteUrlsBtn" class="export-btn">Copy Paste URLs</button>
-                <button id="enrichBtn" class="extract-btn">Get Info</button>
+            <div class="button-section flex gap-2.5 mb-4">
+                <button type="button" id="enricherCopyPasteUrlsBtn" class="export-btn flex-1 py-2.5 px-4 rounded-md text-sm font-medium text-white bg-success transition-colors hover:bg-success-hover disabled:bg-gray-500 disabled:cursor-not-allowed disabled:opacity-60">Copy Paste URLs</button>
+                <button type="button" id="enrichBtn" class="extract-btn flex-1 py-2.5 px-4 rounded-md text-sm font-medium text-white bg-primary transition-colors hover:bg-primary-hover disabled:bg-gray-500 disabled:cursor-not-allowed disabled:opacity-60">Get Info</button>
             </div>
 
-            <div class="input-section">
-                <label for="apolloApiKey">Apollo API Key:</label>
-                <input type="password" id="apolloApiKey" placeholder="Enter Apollo API Key" />
+            <div class="input-section mb-5">
+                <label for="apolloApiKey" class="block mb-1.5 text-gray-600 text-sm font-medium">Apollo API Key:</label>
+                <input type="password" id="apolloApiKey" class="w-full p-2.5 border border-gray-300 rounded-md text-sm font-sans transition-colors focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" placeholder="Enter Apollo API Key" />
             </div>
 
-            <div class="input-section">
-                <label for="findymailApiKey">Findymail API Key:</label>
-                <input type="password" id="findymailApiKey" placeholder="Enter Findymail API Key" />
+            <div class="input-section mb-5">
+                <label for="findymailApiKey" class="block mb-1.5 text-gray-600 text-sm font-medium">Findymail API Key:</label>
+                <input type="password" id="findymailApiKey" class="w-full p-2.5 border border-gray-300 rounded-md text-sm font-sans transition-colors focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" placeholder="Enter Findymail API Key" />
             </div>
-
         </div>
 
         <!-- Copy URLs Tool -->
-         
         <div id="copy-urls-tool" class="tool-section">
-            <div class="section-header">
-                <h3>Copy URLs Tool</h3>
-                <p class="section-description">Copy all URLs from tabs in the current window</p>
+            <div class="section-header mb-4">
+                <h3 class="text-gray-800 text-base font-semibold mb-1">Copy URLs Tool</h3>
+                <p class="section-description text-xs text-gray-500">Copy all URLs from tabs in the current window</p>
             </div>
 
-            <div class="input-section">
-                <label for="urlsTextarea">URLs (one per line):</label>
-                <textarea id="urlsTextarea" rows="8"
-                    placeholder="URLs from all tabs will appear here after copying..."></textarea>
+            <div class="input-section mb-5">
+                <label for="urlsTextarea" class="block mb-1.5 text-gray-600 text-sm font-medium">URLs (one per line):</label>
+                <textarea id="urlsTextarea" rows="8" class="w-full p-2.5 border border-gray-300 rounded-md text-sm font-sans transition-colors focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 resize-y" placeholder="URLs from all tabs will appear here after copying..."></textarea>
             </div>
 
-            <div class="button-section">
-                <button id="copyUrlsBtn" class="extract-btn">Copy URLs</button>
-                <button id="pasteUrlsBtn" class="export-btn">Open URLs</button>
+            <div class="button-section flex gap-2.5 mb-4">
+                <button type="button" id="copyUrlsBtn" class="extract-btn flex-1 py-2.5 px-4 rounded-md text-sm font-medium text-white bg-primary transition-colors hover:bg-primary-hover disabled:bg-gray-500 disabled:cursor-not-allowed disabled:opacity-60">Copy URLs</button>
+                <button type="button" id="pasteUrlsBtn" class="export-btn flex-1 py-2.5 px-4 rounded-md text-sm font-medium text-white bg-success transition-colors hover:bg-success-hover disabled:bg-gray-500 disabled:cursor-not-allowed disabled:opacity-60">Open URLs</button>
             </div>
 
-            <div class="status-section">
-                <div id="copyStatus" class="status-message">Ready</div>
+            <div class="status-section mb-2.5">
+                <div id="copyStatus" class="status-message text-sm text-gray-500 mb-2">Ready</div>
             </div>
         </div>
     </div>

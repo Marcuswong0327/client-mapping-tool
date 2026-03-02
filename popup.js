@@ -854,9 +854,9 @@ class CopyURLs { };
 
 document.addEventListener('DOMContentLoaded', function () {
 
-    // ============================================================================
+    //////////////////////
     // DATA ENRICHER TOOL
-    // ============================================================================
+    ////////////////////
     const apolloApiKeyInput = document.getElementById('apolloApiKey');
     const findymailApiKeyInput = document.getElementById('findymailApiKey');
     const linkedinUrlsInput = document.getElementById('linkedinUrls');
