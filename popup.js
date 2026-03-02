@@ -33,7 +33,7 @@ let multiExtractedJobs = [];
 let extractionErrors = [];
 let isExporting = false; // Flag to prevent double downloads
 
-
+// Wait DOM load and load Tool Navigation
 document.addEventListener('DOMContentLoaded', function () {
     // Tool Navigation
     const toolBtns = document.querySelectorAll('.tool-btn');
@@ -53,6 +53,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 });
+
 class JobExtractor {
 
     constructor() {
@@ -108,32 +109,57 @@ class JobExtractor {
     _getChromeMessages() {
         chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             if (request.action === 'scrapingProgress') {
+
                 this._updateStatus(`Extracting page ${request.page} (${request.jobCount} jobs found)`, 'loading');
                 const estimatedProgress = Math.min((request.page / 10) * 100, 90);
                 this._updateProgress(estimatedProgress);
+
             } else if (request.action === 'scrapingComplete') {
+
                 extractedJobs = request.jobs;
                 this._updateStatus(`Extraction completed! Found ${request.jobs.length} jobs across ${request.totalPages} pages`, 'success');
                 this._updateProgress(100);
-                exportBtn.disabled = false;
                 extractBtn.disabled = false;
+
+                if (typeof this._exportToExcel === 'function' && request.jobs.length > 0 && !isExporting) {
+                    isExporting = true;
+                    setTimeout(async () => {
+                        try {
+                            await this._exportToExcel(request.jobs);
+                        } catch (error) {
+                            console.error('Auto-export failed:', error);
+                            this._updateStatus('Auto-export failed: ' + error.message, 'error');
+                        } finally {
+                            isExporting = false;
+                        }
+                    }, 500);
+                }
+
             } else if (request.action === 'scrapingError') {
+
                 this._updateStatus('Error: ' + request.error, 'error');
                 extractBtn.disabled = false;
                 this._updateProgress(0);
+
             } else if (request.action === 'multiExtractionProgress') {
+
                 const { current, total, results, errors } = request.progress;
                 const percentage = (current / total) * 100;
+
                 this._updateMultiProgress(percentage);
                 this._updateMultiStatus(`Processing ${current} of ${total} URLs...`, 'loading');
+
                 multiDetailsDiv.textContent = `Extracted ${results}`;
 
             } else if (request.action === 'multiExtractionComplete') {
+
                 multiExtractedJobs = request.results;
                 extractionErrors = request.errors;
                 const totalUrls = request.results.length + request.errors.length;
+
                 this._updateMultiStatus(`Complete! Extracted ${request.results.length} of ${totalUrls} jobs`, 'success');
                 this._updateMultiProgress(100);
+
                 multiDetailsDiv.textContent = `Extracted ${request.results.length} | Error: ${request.errors.length}`;
                 multiExtractBtn.disabled = false;
 
@@ -168,7 +194,6 @@ class SingleSeekURLJobExtractor extends JobExtractor {
         super();
         const run = () => {
             this._extractFromSingleURL();
-            this._exportFromSingleURL();
             this._getSeekSearchURL();
         };
         if (document.readyState === 'complete' || document.readyState === 'interactive') {
@@ -212,6 +237,7 @@ class SingleSeekURLJobExtractor extends JobExtractor {
 
                 chrome.tabs.sendMessage(tab.id, { action: 'startScraping' });
 
+
             } catch (error) {
                 this._updateStatus('Error: ' + error.message, 'error');
                 extractBtn.disabled = false;
@@ -219,7 +245,7 @@ class SingleSeekURLJobExtractor extends JobExtractor {
         });
     }
 
-    _exportFromSingleURL() {
+    /*_exportFromSingleURL() {
         exportBtn.addEventListener('click', () => {
             if (extractedJobs.length === 0) {
                 this._updateStatus('No jobs to export', 'error');
@@ -228,40 +254,49 @@ class SingleSeekURLJobExtractor extends JobExtractor {
 
             this._exportToExcel(extractedJobs, 'job_search_extraction');
         });
+    }*/
+
+    async _exportToExcel(jobs) {
+
+        try{
+            if (jobs.length === 0) return;
+
+
+            const headers = ['Job Title', 'Company', 'Location', 'Salary', 'Job URL'];
+            const csvContent = [
+                headers.join(','),
+                ...jobs.map(job => [
+                    `"${this._normalizeText(job.jobTitle).replace(/"/g, '""')}"`,
+                    `"${this._normalizeText(job.company).replace(/"/g, '""')}"`,
+                    `"${this._normalizeText(job.location).replace(/"/g, '""')}"`,
+                    `"${this._normalizeText(job.salary).replace(/"/g, '""')}"`,
+                    `"${job.jobUrl}"`
+                ].join(','))
+            ].join('\n');
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+
+            const url = URL.createObjectURL(blob);
+            chrome.downloads.download({
+                url: url,
+                filename: "job-search-extraction.csv",
+                saveAs: false
+            }, function (downloadId) {
+                if (chrome.runtime.lastError) {
+                    this._updateStatus('Export failed: ' + chrome.runtime.lastError.message, 'error');
+                } else {
+                    this._updateStatus('Successfully exported', 'success');
+                }
+                URL.revokeObjectURL(url);
+            });
+
+            console.log("Download complete! ");
+            this._updateStatus('Download complete!', 'success');
+            
+        }catch(error){
+            throw error;
     }
-
-    _exportToExcel(jobs, filename) {
-        if (jobs.length === 0) return;
-
-        const headers = ['Job Title', 'Company', 'Location', 'Salary', 'Job URL'];
-        const csvContent = [
-            headers.join(','),
-            ...jobs.map(job => [
-                `"${this._normalizeText(job.jobTitle).replace(/"/g, '""')}"`,
-                `"${this._normalizeText(job.company).replace(/"/g, '""')}"`,
-                `"${this._normalizeText(job.location).replace(/"/g, '""')}"`,
-                `"${this._normalizeText(job.salary).replace(/"/g, '""')}"`,
-                `"${job.jobUrl}"`
-            ].join(','))
-        ].join('\n');
-
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const csvFilename = `${filename}.csv`;
-
-        const url = URL.createObjectURL(blob);
-        chrome.downloads.download({
-            url: url,
-            filename: csvFilename,
-            saveAs: true
-        }, function (downloadId) {
-            if (chrome.runtime.lastError) {
-                this._updateStatus('Export failed: ' + chrome.runtime.lastError.message, 'error');
-            } else {
-                this._updateStatus('Successfully exported', 'success');
-            }
-            URL.revokeObjectURL(url);
-        });
-    }
+    };
 
     _getSeekSearchURL() {
         chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
@@ -525,7 +560,7 @@ class MultipleSeekURLJobExtractor extends JobExtractor {
         });
     };
 
-    _exportMultiToExcel(jobs) {
+    _exportMultiToExcel(jobs) { //without stakeholders enriched
         if (jobs.length === 0) return;
 
         const headers = ['State', 'Suburbs', 'Job Title', 'Company Name', 'Salary', 'Posted Date', 'Contact Email', 'URL'];
@@ -722,7 +757,7 @@ class MultipleSeekURLJobExtractor extends JobExtractor {
         return outputData;
     }
 
-    _exportStakeholderEnrichedCsv(matrix) {
+    _exportStakeholderEnrichedCsv(matrix) {//export with stakeholders enriched
         if (!matrix || matrix.length === 0) return;
 
         const csvLines = matrix.map(row =>
@@ -769,10 +804,13 @@ class MultipleSeekURLJobExtractor extends JobExtractor {
         } catch (error) {
 
             console.error('Stakeholder enrichment failed:', error);
-            this._updateMultiStatus('Stakeholder enrichment failed, exported jobs only. ' + error.message, 'error');
-
+            this._updateMultiStatus('Maybe there is no associated stakeholders in your master file, please double check.', 'loading');
+            
+        } finally{
+            
             this._exportMultiToExcel(jobs); //even enrichment stakeholder info failed, still able to export original job listing data
-        }
+            this._updateStatus('Exported jobs still success', 'success');
+        };
     }
 
     _displayErrorPreview(errors) {

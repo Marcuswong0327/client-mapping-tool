@@ -23,7 +23,7 @@ const scripting = {
     execute: (details) => chrome.scripting.executeScript(details) // already Promise-based
 };
 
-// ============================================================================
+/////////////////////////////////////////////////////////////
 
 let extractionState = {
     isRunning: false,
@@ -37,9 +37,9 @@ function safeSendMessage(message) {
     chrome.runtime.sendMessage(message).catch(() => { });
 }
 
-// ============================================================================
-// Markdown + GitHub Gist helpers (OOP-style)
-// ============================================================================
+///////////////////////////////////////////////
+// Markdown + GitHub Gist helpers
+/////////////////////////////////////////////
 
 class MarkdownJobFormatter {
     buildMarkdown(job) {
@@ -245,7 +245,7 @@ async function fetchApolloDataBulk(linkedinUrls, apiKey) {
             }
         });
 
-        // Small delay between batches to respect rate limits (only if more batches remain)
+        // Small delay between batches to respect rate limits (if more batches remain)
         if (i + batchSize < linkedinUrls.length) {
             await new Promise(resolve => setTimeout(resolve, 100));
         }
@@ -285,10 +285,6 @@ async function fetchFindymailData(linkedinUrl, apiKey) {
         }
 
         const data = await response.json();
-
-        // Handle Findymail response structure: {"payload": {"contact": {"email": "...", "name": "...", "domain": "..."}}}
-        // OR sometimes: {"data": {"contact": {"email": "...", "name": "...", "domain": "..."}}}
-        // OR: {"contact": {"email": "...", "name": "...", "domain": "..."}}
 
         let contact = null;
 
@@ -352,7 +348,7 @@ async function fetchFindymailDataBulk(linkedinUrls, apiKey) {
             }
         });
 
-        // Small delay between batches to respect rate limits (only if more batches remain)
+        // Small delay between batches to respect rate limits (if more batches remain)
         if (i + batchSize < linkedinUrls.length) {
             await new Promise(resolve => setTimeout(resolve, 100));
         }

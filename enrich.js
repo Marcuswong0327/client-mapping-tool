@@ -11,7 +11,7 @@ async function processLinkedInUrls(urls, apolloKey, findymailKey) {
         return url.includes('linkedin.com/in/');
     }
 
-    // Clean URLs - only allow LinkedIn person profile URLs
+    // Clean URLs-only allow Linkedin profile URLs
     const urlList = urls.split(/[\n,]/)
         .map(u => u.trim())
         .filter(u => isValidLinkedInProfileUrl(u))
@@ -64,9 +64,9 @@ async function processLinkedInUrls(urls, apolloKey, findymailKey) {
         });
     });
 
-    // ============================================
+    ///////////////////////////////////////////////
     // PHASE 1: Bulk Apollo Processing (5 per batch)
-    // ============================================
+    ///////////////////////////////////////////////
     statusEl.textContent = `(5 per batch) Processing ${urlList.length} URLs with Apollo...`;
 
     try {
@@ -115,9 +115,9 @@ async function processLinkedInUrls(urls, apolloKey, findymailKey) {
             statusEl.className = 'status-message success';
         });
 
-        // ============================================
+        ////////////////////////////////////////////////////////////////////////
         // PHASE 2: Bulk Findymail Processing (for missing emails - batches of 5)
-        // ============================================
+        ///////////////////////////////////////////////////////////////////////
         if (urlsNeedingFindymail.length > 0 && findymailKey) {
             statusEl.textContent = `Phase 2: Enriching ${urlsNeedingFindymail.length} URLs with Findymail...`;
 
@@ -142,6 +142,7 @@ async function processLinkedInUrls(urls, apolloKey, findymailKey) {
                         const findymailData = result.data;
 
                         if (findymailData && findymailData.email && findymailData.email.trim().length > 0) {
+                            
                             // CRITICAL: Actually write the email to personData
                             personData.email = findymailData.email.trim();
                             sessionStats.findymailCount++;
@@ -188,9 +189,9 @@ async function processLinkedInUrls(urls, apolloKey, findymailKey) {
         return;
     }
 
-    // ============================================
-    // FINALIZE: Calculate stats and prepare export
-    // ============================================
+    ///////////////////////////////////////////////
+    //Calculate stats and prepare export
+    ////////////////////////////////////////////////
     const enrichedData = Array.from(enrichedDataMap.values());
 
 
@@ -223,8 +224,6 @@ async function processLinkedInUrls(urls, apolloKey, findymailKey) {
     const statsDisplay = document.getElementById('enrichment-stats');
     statsDisplay.textContent = statsText;
 
-    // CRITICAL: Export to Excel AFTER all async operations complete
-    // The enrichedData array is already populated with all data including Findymail emails
     console.log(`Exporting ${enrichedData.length} records to Excel...`);
     exportToExcel(enrichedData);
 }
@@ -236,7 +235,7 @@ function exportToExcel(data) {
     // Convert to CSV first (Excel can open CSV files)
     const headers = ['LinkedIn URL', 'First Name', 'Last Name', 'Email', 'State', 'Current Role', 'Current Company', 'Company Key Words'];
 
-    // CRITICAL: Map each row explicitly to ensure all data is included
+
     const csvRows = data.map((row, index) => {
         const csvRow = [
             row.linkedin_url || '',
