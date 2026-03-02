@@ -607,16 +607,16 @@ class MultipleSeekURLJobExtractor extends JobExtractor {
         return s.replace(/\s+/g, ' ').trim();
     }
 
-    _buildStakeholderMapFromMaster(masterValues) {
-        const mCol_Nature = 0;
+    _buildStakeholderMapFromMaster(masterValues) {//mCol - master Column
+        const mCol_State = 0;
         const mCol_Company = 1;
-        const mCol_Suburb = 2;
-        const mCol_State = 3;
-        const mCol_Job = 4;
+        const mCol_Category = 2;
+        const mCol_Product = 3;
+        const mCol_TradingStatus = 4;
         const mCol_FirstName = 5;
-        const mCol_FullName = 6;
+        const mCol_Email = 6;
         const mCol_Title = 7;
-        const mCol_Email = 8;
+        const mCol_Suburb = 8;      
         const mCol_History1 = 9;
         const mCol_History2 = 10;
         const mCol_History3 = 11;
@@ -624,21 +624,21 @@ class MultipleSeekURLJobExtractor extends JobExtractor {
 
         const companyMap = new Map();
         let lastCompany = '';
-        let lastNature = '';
+        let lastCategory = '';
 
         for (let i = 1; i < masterValues.length; i++) {
             const row = masterValues[i];
             if (!row) continue;
 
             const rawCompany = row[mCol_Company];
-            const rawNature = row[mCol_Nature];
+            const rawCategory = row[mCol_Category];
 
             // Fill‑down logic: company and nature
             if (rawCompany && rawCompany.toString().trim() !== '') {
                 lastCompany = rawCompany.toString();
             }
-            if (rawNature && rawNature.toString().trim() !== '') {
-                lastNature = rawNature.toString();
+            if (rawCategory && rawCategory.toString().trim() !== '') {
+                lastCategory = rawCategory.toString();
             }
 
             // Skip rows until we've seen at least one company name
@@ -649,15 +649,15 @@ class MultipleSeekURLJobExtractor extends JobExtractor {
             const cleanComp = this._cleanCompanyNameForMatch(lastCompany);
 
             const stakeholder = {
-                nature: lastNature || '',
+                state: row[mCol_State]? row[mCol_State].toString() : '',
                 company: lastCompany || '',
-                suburb: row[mCol_Suburb] ? row[mCol_Suburb].toString() : '',
-                state: row[mCol_State] ? row[mCol_State].toString() : '',
-                job: row[mCol_Job] ? row[mCol_Job].toString() : '',
+                category: row[mCol_Category]? row[mCol_Category].toString(): '',
+                product:row[mCol_Product]? row[mCol_Product].toString():'',
+                tradingStatus: row[mCol_TradingStatus]? row[mCol_TradingStatus].toString() : '',
                 firstName: row[mCol_FirstName] ? row[mCol_FirstName].toString() : '',
-                fullName: row[mCol_FullName] ? row[mCol_FullName].toString() : '',
-                title: row[mCol_Title] ? row[mCol_Title].toString() : '',
                 email: row[mCol_Email] ? row[mCol_Email].toString() : '',
+                title: row[mCol_Title] ? row[mCol_Title].toString() : '',
+                suburb: row[mCol_Suburb] ? row[mCol_Suburb].toString() : '',            
                 history1: row[mCol_History1] ? row[mCol_History1].toString() : '',
                 history2: row[mCol_History2] ? row[mCol_History2].toString() : '',
                 history3: row[mCol_History3] ? row[mCol_History3].toString() : '',
@@ -699,19 +699,19 @@ class MultipleSeekURLJobExtractor extends JobExtractor {
         const headers = jobValues[0] || [];
         const newHeaders = [
             ...headers,
-            'Business Nature',
-            'Company',
-            'Suburbs',
             'State',
-            'Job Opening',
+            'Company',
+            'Category',
+            'Product',
+            'Trading Status',
             'First Name',
-            'Stakeholder Name',
-            'Title',
             'Email',
-            'History & Follow Ups',
-            'History & Follow Ups 2.0',
-            'History & Follow Ups 3.0',
-            'History & Follow Ups 4.0'
+            'Client Title',
+            'Suburb',
+            'History',
+            'History 2.0',
+            'History 3.0',
+            'History 4.0'
         ];
         outputData.push(newHeaders);
 
@@ -730,15 +730,15 @@ class MultipleSeekURLJobExtractor extends JobExtractor {
                 stakeholders.forEach(sh => {
                     const newRow = [...row];
                     newRow.push(
-                        sh.nature ?? '',
+                        sh.state?? '',
                         sh.company ?? '',
-                        sh.suburb ?? '',
-                        sh.state ?? '',
-                        sh.job ?? '',
+                        sh.category ?? '',
+                        sh.product ?? '',
+                        sh.tradingStatus ?? '',
                         sh.firstName ?? '',
-                        sh.fullName ?? '',
-                        sh.title ?? '',
                         sh.email ?? '',
+                        sh.title ?? '',
+                        sh.suburb ?? '',
                         sh.history1 ?? '',
                         sh.history2 ?? '',
                         sh.history3 ?? '',
@@ -853,9 +853,6 @@ class CopyURLs { };
 
 
 document.addEventListener('DOMContentLoaded', function () {
-
-
-
 
     // ============================================================================
     // DATA ENRICHER TOOL
