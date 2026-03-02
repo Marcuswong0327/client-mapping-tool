@@ -4,63 +4,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Client Mapping Tool</title>
+    <title>BD Client Map 3.0</title>
     <link rel="stylesheet" href="popup.css">
 </head>
 
 <body>
     <div class="container">
         <div class="header">
-            <h2>Client Mapping Tool</h2>
+            <h2>BD Client Map 3.0</h2>
         </div>
 
         <!-- Tool Navigation -->
         <div class="tool-nav">
             <button class="tool-btn active" data-tool="job-extractor">Job Extractor</button>
-            <button class="tool-btn" data-tool="data-enricher">Data Enricher</button>
+            <button class="tool-btn" data-tool="data-enricher">BD Stakeholders</button>
             <button class="tool-btn" data-tool="copy-urls">Copy URLs</button>
         </div>
 
 
-        <!-- Job Data Extractor Tool -->
+        <!-- Multi URLs Job Extractor -->
         <div id="job-extractor-tool" class="tool-section active">
-            <div class="section-header">
-                <h3>Job Data Extractor</h3>
-                <p class="section-description">Extract job data from Seek (single or multiple URLs)</p>
-            </div>
-
-            <div class="input-section">
-                <label for="jobUrl">Job Search URL:</label>
-                <input type="url" id="jobUrl" placeholder="https://www.seek.com.au/linktal-jobs-intern/" />
-            </div>
-
-            <div class="status-section">
-                <div id="status" class="status-message">Click to start extracting</div>
-                <div id="progress" class="progress-bar">
-                    <div id="progressFill" class="progress-fill"></div>
-                </div>
-            </div>
-
-            <div class="button-section">
-                <button id="extractBtn" class="extract-btn">Extract Jobs</button>
-                <button id="exportBtn" class="export-btn" disabled>Export to Excel</button>
-            </div>
-
-            <div class="divider"></div>
-
-            <!-- Multi-URl Extraction -->
 
             <div class="multi-url-section">
                 <div class="section-header">
-                    <h3>Multi-URL Extraction</h3>
-                    <p class="section-description">Extract data from multiple job listing URLs</p>
+                    <h3>Get Job Info From Multiple Seek Job URLs</h3>
+                    <p class="section-description">Step 1: Click "Copy Paste" button to paste Seek URLs</p>
+                    <p class="section-description">Step 2: Click "Extract" button and wait for autodownload</p>
                 </div>
 
                 <div class="input-section">
-                    <label for="multiUrls">Job Listing URLs (one per line):</label>
-                    <textarea id="multiUrls" rows="6" placeholder="https://www.seek.com.au/job/consultant_1
-https://www.seek.com.au/job/consultant_2
-https://www.seek.com.au/job/consultant_3"></textarea>
+                    <label for="multiUrls"></label>
+                    <textarea id="multiUrls" rows="2" placeholder="https://www.seek.com.au/job/consultant_1"></textarea>
                 </div>
 
                 <div class="status-section">
@@ -71,53 +45,98 @@ https://www.seek.com.au/job/consultant_3"></textarea>
                     <div id="multiDetails" class="progress-details"></div>
                 </div>
 
-                <div class="input-section">
-                    <label for="githubGistToken">GitHub Gist Token</label>
-                    <input type="password" id="githubGistToken" />
-                </div>
 
                 <div class="button-section">
                     <button id="copyPasteUrlsBtn" class="export-btn">Copy Paste URLs</button>
                     <button id="multiExtractBtn" class="extract-btn">Extract from URLs</button>
                 </div>
 
-                <!--Master file upload section-->
-                <div class="master-upload-section">
-                    <div class="section-header">
-                        <h3>Master Stakeholder File</h3>
-                        <p>Excel (.xlsx) format only</p>
-                    </div>
+            <div class="divider"></div>
 
-                    <input id="masterFileInput" type="file" accept=".xlsx" style="display: none;" />
-                    <div id="masterDropzone" class="dropzone" role="button" tabindex="0">
-                        <div class="dropzone-title">Drag &amp; drop or click to upload</div>
-                        <div id="masterUploadMeta" class="dropzone-meta">No file yet</div>
-                    </div>
-                    <div id="masterUploadStatus" class="status-message"></div>
-                </div>
 
-                <div id="errorPreviewSection" class="error-preview-section" style="display: none;">
-                    <button id="errorToggleBtn" class="error-toggle-btn">
-                        <span id="errorToggleIcon">▼</span>
-                        <span id="errorToggleText">Show Failed URLs</span>
-                    </button>
+            <div class="input-section">
+                <label for="jobUrl">Place Seek Search URLs below</label>
+                <input type="url" id="jobUrl" placeholder="https://www.seek.com.au/linktal-jobs-intern/" />
+            </div>
 
-                    <div id="errorPreviewContent" class="error-preview-content" style="display: none;">
-                        <div class="error-preview-header">
-                            <span id="errorCount" class="error-count-text"></span>
-                            <button id="copyErrorUrlsBtn" class="copy-urls-btn">Copy All URLs</button>
-                        </div>
-                        <div id="errorList" class="error-list"></div>
-                    </div>
+            <div class="status-section">
+                <div id="status" class="status-message">Click "Extract & Export" and wait for autodownload</div>
+                <div id="progress" class="progress-bar">
+                    <div id="progressFill" class="progress-fill"></div>
                 </div>
             </div>
+
+            <div class="button-section">
+                <button id="extractBtn" class="extract-btn">Extract Jobs</button>
+                <button id="exportBtn" class="export-btn" disabled>Export to Excel</button>
+            </div>
+
+
+            
+
+            <!--Gists Token & Master file upload section-->
+            
+                <div class="input-section">
+                    <label for="githubGistToken">GitHub Gist Token</label>
+                    <input type="password" id="githubGistToken" />
+                </div>
+
+            <div class="master-upload-section">
+                <div class="section-header">
+                    <h3>Master Stakeholder File</h3>
+                    <p>Excel (.xlsx) format only</p>
+                </div>
+
+                <input id="masterFileInput" type="file" accept=".xlsx" style="display: none;" />
+                <div id="masterDropzone" class="dropzone" role="button" tabindex="0">
+                    <div class="dropzone-title">Drag &amp; drop or click to upload</div>
+                    <div id="masterUploadMeta" class="dropzone-meta">No file yet</div>
+                </div>
+                <div id="masterUploadStatus" class="status-message"></div>
+            </div>
+
+            <!--Error preview for Multi URLs Failed Extraction-->
+            <div id="errorPreviewSection" class="error-preview-section" style="display: none;">
+                <button id="errorToggleBtn" class="error-toggle-btn">
+                    <span id="errorToggleIcon">▼</span>
+                    <span id="errorToggleText">Show Failed URLs</span>
+                </button>
+
+                <div id="errorPreviewContent" class="error-preview-content" style="display: none;">
+                    <div class="error-preview-header">
+                        <span id="errorCount" class="error-count-text"></span>
+                        <button id="copyErrorUrlsBtn" class="copy-urls-btn">Copy All URLs</button>
+                    </div>
+                    <div id="errorList" class="error-list"></div>
+                </div>
+            </div>
+        </div>
         </div>
 
         <!-- Data Enricher Tool -->
         <div id="data-enricher-tool" class="tool-section">
             <div class="section-header">
-                <h3>Data Enricher</h3>
-                <p class="section-description">Enrich LinkedIn profiles with Apollo and Findymail</p>
+                <h3>Finding Stakeholders' Info</h3>
+                <p class="section-description">Step 1: Click "Copy Paste" button to paste LinkedIn URLs </p>
+                <p class="section-description">Step 2: Click "Get Info" button and wait for autodownload </p>
+            </div>
+
+    
+
+            <div class="input-section">
+                <label for="linkedinUrls">LinkedIn URLs (one per line):</label>
+                <textarea id="linkedinUrls" rows="2" placeholder="https://www.linkedin.com/in/consultant1"></textarea>
+            </div>
+
+            <div class="status-section">
+                <div id="enrichment-status" class="status-message">Ready to enrich</div>
+                <progress id="enrichment-progress" class="progress-bar" value="0" max="100"></progress>
+                <div id="enrichment-stats" class="progress-details"></div>
+            </div>
+
+            <div class="button-section">
+                <button id="enricherCopyPasteUrlsBtn" class="export-btn">Copy Paste URLs</button>
+                <button id="enrichBtn" class="extract-btn">Get Info</button>
             </div>
 
             <div class="input-section">
@@ -130,23 +149,6 @@ https://www.seek.com.au/job/consultant_3"></textarea>
                 <input type="password" id="findymailApiKey" placeholder="Enter Findymail API Key" />
             </div>
 
-            <div class="input-section">
-                <label for="linkedinUrls">LinkedIn URLs (one per line):</label>
-                <textarea id="linkedinUrls" rows="6" placeholder="https://www.linkedin.com/in/consultant1
-https://www.linkedin.com/in/consultant2
-https://www.linkedin.com/in/consultant3"></textarea>
-            </div>
-
-            <div class="status-section">
-                <div id="enrichment-status" class="status-message">Ready to enrich</div>
-                <progress id="enrichment-progress" class="progress-bar" value="0" max="100"></progress>
-                <div id="enrichment-stats" class="progress-details"></div>
-            </div>
-
-            <div class="button-section">
-                <button id="enricherCopyPasteUrlsBtn" class="export-btn">Copy Paste URLs</button>
-                <button id="enrichBtn" class="extract-btn">Start Enrichment</button>
-            </div>
         </div>
 
         <!-- Copy URLs Tool -->
