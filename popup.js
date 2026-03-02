@@ -560,41 +560,41 @@ class MultipleSeekURLJobExtractor extends JobExtractor {
         });
     };
 
-    _exportMultiToExcel(jobs) { //without stakeholders enriched
-        if (jobs.length === 0) return;
+    // _exportMultiToExcel(jobs) { //without stakeholders enriched
+    //     if (jobs.length === 0) return;
 
-        const headers = ['State', 'Suburbs', 'Job Title', 'Company Name', 'Salary', 'Posted Date', 'Contact Email', 'URL'];
-        const csvContent = [
-            headers.join(','),
-            ...jobs.map(job => [
-                `"${this._normalizeText(job.state || '').replace(/"/g, '""')}"`,
-                `"${this._normalizeText(job.suburbs || '').replace(/"/g, '""')}"`,
-                `"${this._normalizeText(job.jobTitle || '').replace(/"/g, '""')}"`,
-                `"${this._normalizeText(job.company || '').replace(/"/g, '""')}"`,
-                `"${this._normalizeText(job.salary || '').replace(/"/g, '""')}"`,
-                `"${this._normalizeText(job.postedDate || '').replace(/"/g, '""')}"`,
-                `"${this._normalizeText(job.contactEmail || '').replace(/"/g, '""')}"`,
-                `"${job.url || ''}"`
-            ].join(','))
-        ].join('\n');
+    //     const headers = ['State', 'Suburbs', 'Job Title', 'Company Name', 'Salary', 'Posted Date', 'Contact Email', 'URL'];
+    //     const csvContent = [
+    //         headers.join(','),
+    //         ...jobs.map(job => [
+    //             `"${this._normalizeText(job.state || '').replace(/"/g, '""')}"`,
+    //             `"${this._normalizeText(job.suburbs || '').replace(/"/g, '""')}"`,
+    //             `"${this._normalizeText(job.jobTitle || '').replace(/"/g, '""')}"`,
+    //             `"${this._normalizeText(job.company || '').replace(/"/g, '""')}"`,
+    //             `"${this._normalizeText(job.salary || '').replace(/"/g, '""')}"`,
+    //             `"${this._normalizeText(job.postedDate || '').replace(/"/g, '""')}"`,
+    //             `"${this._normalizeText(job.contactEmail || '').replace(/"/g, '""')}"`,
+    //             `"${job.url || ''}"`
+    //         ].join(','))
+    //     ].join('\n');
 
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const filename = `seek_job_data.csv`;
+    //     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    //     const filename = `seek_job_data.csv`;
 
-        const url = URL.createObjectURL(blob)
-        chrome.downloads.download({
-            url: url,
-            filename: filename,
-            saveAs: false
-        }, function (downloadId) {
-            if (chrome.runtime.lastError) {
-                this._updateMultiStatus('Export failed: ' + chrome.runtime.lastError.message, 'error');
-            } else {
-                this._updateMultiStatus(`Downloaded ${jobs.length} jobs`, 'success');
-            }
-            URL.revokeObjectURL(url);
-        });
-    }
+    //     const url = URL.createObjectURL(blob)
+    //     chrome.downloads.download({
+    //         url: url,
+    //         filename: filename,
+    //         saveAs: false
+    //     }, function (downloadId) {
+    //         if (chrome.runtime.lastError) {
+    //             this._updateMultiStatus('Export failed: ' + chrome.runtime.lastError.message, 'error');
+    //         } else {
+    //             this._updateMultiStatus(`Downloaded ${jobs.length} jobs`, 'success');
+    //         }
+    //         URL.revokeObjectURL(url);
+    //     });
+    // }
 
     _cleanCompanyNameForMatch(name) {
         if (!name || name.length === 0) return '';
@@ -804,12 +804,8 @@ class MultipleSeekURLJobExtractor extends JobExtractor {
         } catch (error) {
 
             console.error('Stakeholder enrichment failed:', error);
-            this._updateMultiStatus('Maybe there is no associated stakeholders in your master file, please double check.', 'loading');
-            
-        } finally{
-            
-            this._exportMultiToExcel(jobs); //even enrichment stakeholder info failed, still able to export original job listing data
-            this._updateStatus('Exported jobs still success', 'success');
+            this._updateMultiStatus('Stakeholder enrichment failed. Please double check your master file and job listing data.', 'loading');
+            //this._exportMultiToExcel(jobs); 
         };
     }
 
