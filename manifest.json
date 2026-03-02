@@ -1,6 +1,6 @@
 {
     "manifest_version": 3,
-    "name": "BD Client Map",
+    "name": "Client Mapping",
     "version": "3.0",
     "description": "Upgraded Client Mapping Tool with Job Data Extractor, Data Enricher tools & Copy URLs.",
     "icons": {
@@ -26,7 +26,7 @@
     ],
     "action": {
         "default_popup": "popup.html",
-        "default_title": "BD Client Map 3.0"
+        "default_title": "Client Mapping 3.0"
     },
     "background": {
         "service_worker": "background.js"

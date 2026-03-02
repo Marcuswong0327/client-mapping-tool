@@ -4,30 +4,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BD Client Map 3.0</title>
+    <title>Client Mapping 3.0</title>
     <link rel="stylesheet" href="popup.css">
 </head>
 
 <body class="antialiased">
     <div class="container p-5">
         <header class="header text-center mb-5">
-            <h2 class="text-gray-800 text-lg font-semibold">BD Client Map 3.0</h2>
+            <h2 class="text-gray-800 text-lg font-semibold">Client Mapping 3.0</h2>
         </header>
 
         <!-- Tool Navigation (Tailwind: flex, gap, border, padding) -->
         <div class="tool-nav flex gap-1.5 mb-5 border-b-2 border-gray-200 pb-2.5">
-            <button type="button" class="tool-btn active flex-1 py-2 px-3 rounded-t-md border-none bg-transparent text-gray-500 text-sm font-medium cursor-pointer transition-all duration-200 border-b-2 border-transparent -mb-0.5 hover:bg-gray-100 hover:text-gray-800" data-tool="job-extractor">Job Extractor</button>
-            <button type="button" class="tool-btn flex-1 py-2 px-3 rounded-t-md border-none bg-transparent text-gray-500 text-sm font-medium cursor-pointer transition-all duration-200 border-b-2 border-transparent -mb-0.5 hover:bg-gray-100 hover:text-gray-800" data-tool="data-enricher">BD Stakeholders</button>
-            <button type="button" class="tool-btn flex-1 py-2 px-3 rounded-t-md border-none bg-transparent text-gray-500 text-sm font-medium cursor-pointer transition-all duration-200 border-b-2 border-transparent -mb-0.5 hover:bg-gray-100 hover:text-gray-800" data-tool="copy-urls">Copy URLs</button>
+            <button type="button" class="tool-btn active flex-1 py-2 px-3 rounded-t-md border-none bg-transparent text-gray-500 text-sm font-medium cursor-pointer transition-all duration-200 border-b-2 border-transparent -mb-0.5 hover:bg-gray-100 hover:text-gray-800" data-tool="job-extractor">Jobs & Search</button>
+            <button type="button" class="tool-btn flex-1 py-2 px-3 rounded-t-md border-none bg-transparent text-gray-500 text-sm font-medium cursor-pointer transition-all duration-200 border-b-2 border-transparent -mb-0.5 hover:bg-gray-100 hover:text-gray-800" data-tool="data-enricher">Linkedln Profiles</button>
+            <button type="button" class="tool-btn flex-1 py-2 px-3 rounded-t-md border-none bg-transparent text-gray-500 text-sm font-medium cursor-pointer transition-all duration-200 border-b-2 border-transparent -mb-0.5 hover:bg-gray-100 hover:text-gray-800" data-tool="copy-urls">Copy Open URLs</button>
         </div>
 
         <!-- Multi URLs Job Extractor -->
         <div id="job-extractor-tool" class="tool-section active">
             <div class="multi-url-section mt-5">
                 <div class="section-header mb-4">
-                    <h3 class="text-gray-800 text-base font-semibold mb-1">Get Job Info From Multiple Seek Job URLs</h3>
-                    <p class="section-description text-xs text-gray-500">Step 1: Click "Copy Paste" button to paste Seek URLs</p>
-                    <p class="section-description text-xs text-gray-500">Step 2: Click "Extract" button and wait for autodownload</p>
+                    <h3 class="text-gray-800 text-base font-semibold mb-1">Jobs</h3>
+                    <p class="section-description text-xs text-gray-500">Extracting job list info from Seek URLs including all data from Master File to export.</p>
                 </div>
 
                 <div class="input-section mb-5">
@@ -52,32 +51,35 @@
             <div class="divider h-px my-6 bg-gray-200"></div>
 
             <!-- Single Seek Search URL Extractor -->
-            <div class="input-section mb-5">
-                <label for="jobUrl" class="block mb-1.5 text-gray-600 text-sm font-medium">Double Check Seek Search URLs below (AutoPlaced)</label>
+             <div class="section-header mb-4">
+                <h3 class="text-gray-800 text-base font-semibold mb-1">Search</h3>
+                <p class="section-description text-xs text-gray-500">Extracting all job list from Search Page, please double check it is a correct Seach URL.</p>
+            </div>
+
+                <div class="input-section mb-5">
+                <!--label for="jobUrl" class="block mb-1.5 text-gray-600 text-sm font-medium">Search</label-->
                 <input type="url" id="jobUrl" class="w-full p-2.5 border border-gray-300 rounded-md text-sm font-sans transition-colors focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" placeholder="https://www.seek.com.au/linktal-jobs-intern/" />
             </div>
 
             <div class="status-section mb-2.5">
-                <div id="status" class="status-message text-sm text-gray-500 mb-2">Click button below and wait for autodownload</div>
+                <div id="status" class="status-message text-sm text-gray-500 mb-2">Ready to extract</div>
                 <div id="progress" class="progress-bar w-full h-1 bg-gray-200 rounded overflow-hidden">
                     <div id="progressFill" class="progress-fill"></div>
                 </div>
             </div>
 
             <div class="button-section flex gap-2.5 mb-4">
-                <button type="button" id="extractBtn" class="extract-btn flex-1 py-2.5 px-4 rounded-md text-sm font-medium text-white bg-primary transition-colors hover:bg-primary-hover disabled:bg-gray-500 disabled:cursor-not-allowed disabled:opacity-60">Extract & Export Jobs</button>
+                <button type="button" id="extractBtn" class="extract-btn flex-1 py-2.5 px-4 rounded-md text-sm font-medium text-white bg-primary transition-colors hover:bg-primary-hover disabled:bg-gray-500 disabled:cursor-not-allowed disabled:opacity-60">Extract from Search URL</button>
             </div>
 
-            <!-- Gists Token & Master file upload section -->
-            <div class="input-section mb-5">
-                <label for="githubGistToken" class="block mb-1.5 text-gray-600 text-sm font-medium">GitHub Gist Token</label>
-                <input type="password" id="githubGistToken" class="w-full p-2.5 border border-gray-300 rounded-md text-sm font-sans transition-colors focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
-            </div>
+            <!-- Master file upload section -->
+
+            <div class="divider h-px my-6 bg-gray-200"></div>
 
             <div class="master-upload-section mt-4">
                 <div class="section-header mb-4">
-                    <h3 class="text-gray-800 text-base font-semibold mb-1">Master Stakeholder File</h3>
-                    <p class="text-xs text-gray-500">Excel (.xlsx) format only</p>
+                    <h3 class="text-gray-800 text-base font-semibold mb-1">Setting ONLY</h3>
+                    <p class="text-xs text-gray-500">Master File Excel (.xlsx) format only</p>
                 </div>
 
                 <input id="masterFileInput" type="file" accept=".xlsx" class="hidden" />
@@ -86,6 +88,17 @@
                     <div id="masterUploadMeta" class="dropzone-meta text-xs text-gray-500 break-words">No file yet</div>
                 </div>
                 <div id="masterUploadStatus" class="status-message text-sm text-gray-500 mb-2"></div>
+            </div>
+
+             <!-- Gists Token UI -->
+
+            <div class="section-header mb-4">
+                <h3 class="text-gray-800 text-base font-semibold mb-1">GitHub Gist Token</h3>
+            </div>
+
+            <div class="input-section mb-5">
+                <!--label for="githubGistToken" class="block mb-1.5 text-gray-600 text-sm font-medium">GitHub Gist Token</label-->
+                <input type="password" id="githubGistToken" class="w-full p-2.5 border border-gray-300 rounded-md text-sm font-sans transition-colors focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
             </div>
 
             <!-- Error preview for Multi URLs Failed Extraction -->
@@ -108,9 +121,7 @@
         <!-- Data Enricher Tool -->
         <div id="data-enricher-tool" class="tool-section">
             <div class="section-header mb-4">
-                <h3 class="text-gray-800 text-base font-semibold mb-1">Finding Stakeholders' Info</h3>
-                <p class="section-description text-xs text-gray-500">Step 1: Click "Copy Paste" button to paste LinkedIn URLs </p>
-                <p class="section-description text-xs text-gray-500">Step 2: Click "Get Info" button and wait for autodownload </p>
+                <h3 class="text-gray-800 text-base font-semibold mb-1">Extracting all stakeholder info from Linkedln URLs including email contact.</h3>
             </div>
 
             <div class="input-section mb-5">
@@ -126,8 +137,14 @@
 
             <div class="button-section flex gap-2.5 mb-4">
                 <button type="button" id="enricherCopyPasteUrlsBtn" class="export-btn flex-1 py-2.5 px-4 rounded-md text-sm font-medium text-white bg-success transition-colors hover:bg-success-hover disabled:bg-gray-500 disabled:cursor-not-allowed disabled:opacity-60">Copy Paste URLs</button>
-                <button type="button" id="enrichBtn" class="extract-btn flex-1 py-2.5 px-4 rounded-md text-sm font-medium text-white bg-primary transition-colors hover:bg-primary-hover disabled:bg-gray-500 disabled:cursor-not-allowed disabled:opacity-60">Get Info</button>
+                <button type="button" id="enrichBtn" class="extract-btn flex-1 py-2.5 px-4 rounded-md text-sm font-medium text-white bg-primary transition-colors hover:bg-primary-hover disabled:bg-gray-500 disabled:cursor-not-allowed disabled:opacity-60">Extract from URLs</button>
             </div>
+
+            <div class="divider h-px my-6 bg-gray-200"></div>
+
+            <div class="section-header mb-4">
+                    <h3 class="text-gray-800 text-base font-semibold mb-1">Setting ONLY</h3>
+                </div>
 
             <div class="input-section mb-5">
                 <label for="apolloApiKey" class="block mb-1.5 text-gray-600 text-sm font-medium">Apollo API Key:</label>
@@ -142,10 +159,6 @@
 
         <!-- Copy URLs Tool -->
         <div id="copy-urls-tool" class="tool-section">
-            <div class="section-header mb-4">
-                <h3 class="text-gray-800 text-base font-semibold mb-1">Copy URLs Tool</h3>
-                <p class="section-description text-xs text-gray-500">Copy all URLs from tabs in the current window</p>
-            </div>
 
             <div class="input-section mb-5">
                 <label for="urlsTextarea" class="block mb-1.5 text-gray-600 text-sm font-medium">URLs (one per line):</label>

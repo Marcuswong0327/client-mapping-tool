@@ -5,20 +5,16 @@
 /* Base styles for popup (replacing global LESS rules) */
 @layer base {
   body {
-    @apply font-sans w-[450px] min-w-[450px] max-h-[480px] overflow-y-auto bg-gray-100;
+    @apply font-sans w-[480px] min-w-[480px] max-h-[480px] overflow-y-auto bg-gray-100;
   }
   p {
     @apply cursor-pointer transition-all duration-200;
   }
 }
 
-/* =============================================================================
-   Tailwind "components" layer: styles that are toggled by JavaScript.
-   We keep these class names so popup.js / enrich.js can set them without change.
-   ============================================================================= */
 
 @layer components {
-  /* Status message: base + variants (JS sets className = 'status-message ' + type, replacing the whole class) */
+
   .status-message {
     @apply text-sm text-gray-500 mb-2;
   }
@@ -32,7 +28,7 @@
     @apply text-primary;
   }
 
-  /* Tool nav: active tab (JS toggles .active on .tool-btn and .tool-section) */
+  
   .tool-section {
     @apply hidden;
   }
@@ -44,7 +40,7 @@
     @apply border-b-primary text-primary bg-transparent border-b-2;
   }
 
-  /* Dropzone dragover state */
+  
   .dropzone.dragover {
     @apply border-primary bg-blue-50;
   }
@@ -54,12 +50,12 @@
     @apply rotate-180;
   }
 
-  /* Progress fill bar (width is set in JS: progressFill.style.width = percentage + '%') */
+
   .progress-fill {
     @apply h-full bg-primary w-0 transition-all duration-300 ease-out;
   }
 
-  /* Error list items (created dynamically in popup.js _displayErrorPreview) */
+ 
   .error-item {
     @apply bg-white border border-gray-200 rounded p-2.5 text-xs;
   }
@@ -71,7 +67,7 @@
   }
 }
 
-/* Native <progress> element – Tailwind can't style pseudo-elements, so we use plain CSS */
+
 #enrichment-progress {
   @apply w-full h-2 rounded bg-gray-200 mt-2 mb-2;
 }
