@@ -126,6 +126,7 @@ class JobExtractor {
             .replace(/Â/g, "")
             .replace(/–/g, "-")
             .replace(/—/g, "-")
+            .replace(/\u00C2\u00A0|\u00C2/g, '-');
     }
 
     _getChromeMessages() {
@@ -289,15 +290,16 @@ class SingleSeekURLJobExtractor extends JobExtractor {
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
 
             const url = URL.createObjectURL(blob);
+            const self = this;
             chrome.downloads.download({
                 url: url,
                 filename: "job-search-extraction.csv",
                 saveAs: false
             }, function (downloadId) {
                 if (chrome.runtime.lastError) {
-                    this._updateStatus('Export failed: ' + chrome.runtime.lastError.message, 'error');
+                    self._updateStatus('Export failed: ' + chrome.runtime.lastError.message, 'error');
                 } else {
-                    this._updateStatus('Successfully exported', 'success');
+                    self._updateStatus('Successfully exported', 'success');
                 }
                 URL.revokeObjectURL(url);
             });
@@ -611,9 +613,9 @@ class MultipleSeekURLJobExtractor extends JobExtractor {
         let s = name.toUpperCase();
         s = s.replace(/[^A-Z0-9\s]/g, '');
 
-        //const noiseRegex = /\b(PTY|LTD|LIMITED|INC|CORPORATION|GROUP|AUSTRALIA|HOLDINGS|SOLUTIONS|SYSTEMS|SERVICES|DEVELOPMENTS)\b/g;
+        const noiseRegex = /\b(PTY|LTD|LIMITED|INC|CORPORATION|GROUP|AUSTRALIA|HOLDINGS|SOLUTIONS|SYSTEMS|SERVICES|DEVELOPMENTS)\b/g;
 
-        //s = s.replace(noiseRegex, '');
+        s = s.replace(noiseRegex, '');
         return s.replace(/\s+/g, ' ').trim();
     }
 
@@ -773,7 +775,7 @@ class MultipleSeekURLJobExtractor extends JobExtractor {
         const csvLines = matrix.map(row =>
             row.map(cell => {
                 const value = cell === null ? '' : this._normalizeText(String(cell));
-                return `"${value.replace(/"/g, '""')}"`;
+                return `"${value.replace(/\u00C2\u00A0|\u00C2/g, '')}"`;
             }).join(',')
         );
 
