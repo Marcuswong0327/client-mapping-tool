@@ -38,10 +38,21 @@ let isExporting = false; // Flag to prevent double downloads
 ////////////////////
 const apolloApiKeyInput = document.getElementById('apolloApiKey');
 const findymailApiKeyInput = document.getElementById('findymailApiKey');
+
 const linkedinUrlsInput = document.getElementById('linkedinUrls');
+const linkedinUrlsCount = document.getElementById('url-count-display');
+
 const enricherCopyPasteUrlsBtn = document.getElementById('enricherCopyPasteUrlsBtn');
 const enrichBtn = document.getElementById('enrichBtn');
 const enrichmentStatusEl = document.getElementById('enrichment-status');
+
+/////////////////
+// COPY URLs TOOL
+/////////////////
+    const urlsTextarea = document.getElementById('urlsTextarea');
+    const copyUrlsBtn = document.getElementById('copyUrlsBtn');
+    const pasteUrlsBtn = document.getElementById('pasteUrlsBtn');
+    const copyStatusEl = document.getElementById('copyStatus');
 
 
 // Wait DOM load and load Tool Navigation
@@ -203,10 +214,12 @@ class SingleSeekURLJobExtractor extends JobExtractor {
 
     constructor() {
         super();
+
         const run = () => {
-            this._extractFromSingleURL();
+            extractBtn.addEventListener('click', this._extractFromSingleURL.bind(this));
             this._getSeekSearchURL();
         };
+
         if (document.readyState === 'complete' || document.readyState === 'interactive') {
             run();
         } else {
@@ -214,58 +227,46 @@ class SingleSeekURLJobExtractor extends JobExtractor {
         }
     }
 
-    _extractFromSingleURL() {
-        extractBtn.addEventListener('click', async () => {
-            const url = jobUrlInput.value.trim();
+    async _extractFromSingleURL() {
+        
+        const url = jobUrlInput.value.trim();
 
-            if (!url) {
-                this._updateStatus('Please enter a job search URL', 'error');
-                return;
-            }
+        if (!url) {
+            this._updateStatus('Please enter a job search URL', 'error');
+            return;
+        }
 
-            if (!url.includes('seek.com')) {
-                this._updateStatus('Please enter a valid Seek URL', 'error');
-                return;
-            }
+        if (!url.includes('seek.com')) {
+            this._updateStatus('Please enter a valid Seek URL', 'error');
+            return;
+        }
 
-            try {
-                const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        try {
+            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
-                await chrome.tabs.update(tab.id, { url: url });
+            await chrome.tabs.update(tab.id, { url: url });
 
-                await new Promise(resolve => {
-                    chrome.tabs.onUpdated.addListener(function listener(tabId, info) {
-                        if (tabId === tab.id && info.status === 'complete') {
-                            chrome.tabs.onUpdated.removeListener(listener);
-                            resolve();
-                        }
-                    });
+            await new Promise(resolve => {
+                chrome.tabs.onUpdated.addListener(function listener(tabId, info) {
+                    if (tabId === tab.id && info.status === 'complete') {
+                        chrome.tabs.onUpdated.removeListener(listener);
+                        resolve();
+                    }
                 });
+            });
 
-                extractBtn.disabled = true;
-                this._updateStatus('Starting job extraction...', 'loading');
-                this._updateProgress(0);
+            extractBtn.disabled = true;
+            this._updateStatus('Starting job extraction...', 'loading');
+            this._updateProgress(0);
 
-                chrome.tabs.sendMessage(tab.id, { action: 'startScraping' });
+            chrome.tabs.sendMessage(tab.id, { action: 'startScraping' });
 
 
-            } catch (error) {
-                this._updateStatus('Error: ' + error.message, 'error');
-                extractBtn.disabled = false;
-            }
-        });
+        } catch (error) {
+            this._updateStatus('Error: ' + error.message, 'error');
+            extractBtn.disabled = false;
+        }
     }
-
-    /*_exportFromSingleURL() {
-        exportBtn.addEventListener('click', () => {
-            if (extractedJobs.length === 0) {
-                this._updateStatus('No jobs to export', 'error');
-                return;
-            }
-
-            this._exportToExcel(extractedJobs, 'job_search_extraction');
-        });
-    }*/
 
     async _exportToExcel(jobs) {
 
@@ -328,11 +329,11 @@ class MultipleSeekURLJobExtractor extends JobExtractor {
     constructor() {
         super();
         const run = () => {
-            this._handleMasterUploadUI();
+            this._handleMasterUploadInterface();
             this._loadMasterMetaOnStart();
             this._loadGistsToken();
-            this._copyMultipleSeekJobURL();
-            this._extractFromMultipleURL();
+            copyPasteUrlsBtn.addEventListener('click', this._copyMultipleSeekJobURLs.bind(this));
+            multiExtractBtn.addEventListener('click', this._extractFromMultipleURLs.bind(this));
             this._displayFailedMultipleURL();
             this._handleFailedMultipleURL();
         };
@@ -427,34 +428,33 @@ class MultipleSeekURLJobExtractor extends JobExtractor {
         }
     };
 
-    _copyMultipleSeekJobURL() {
-        copyPasteUrlsBtn.addEventListener('click', async () => {
-            try {
-                const tabs = await chrome.tabs.query({ currentWindow: true });
+    async _copyMultipleSeekJobURLs() {
 
-                if (tabs.length === 0) {
-                    this._updateMultiStatus('No tabs found in current window', 'error');
-                    return;
-                }
+        try {
+            const tabs = await chrome.tabs.query({ currentWindow: true });
 
-                const seekJobUrls = tabs
-                    .map(tab => tab.url)
-                    .filter(url => this._isValidSeekSearchURL(url));
-
-                if (seekJobUrls.length === 0) {
-                    this._updateMultiStatus('No Seek job URLs found in current tabs', 'error');
-                    return;
-                }
-
-                multiUrlsInput.value = seekJobUrls.join('\n');
-                this._updateMultiStatus(`Copied ${seekJobUrls.length} Seek job URL(s)`, 'success');
-            } catch (error) {
-                this._updateMultiStatus('Error: ' + error.message, 'error');
+            if (tabs.length === 0) {
+                this._updateMultiStatus('No tabs found in current window', 'error');
+                return;
             }
-        });
+
+            const seekJobUrls = tabs
+                .map(tab => tab.url)
+                .filter(url => this._isValidSeekSearchURL(url));
+
+            if (seekJobUrls.length === 0) {
+                this._updateMultiStatus('No Seek job URLs found in current tabs', 'error');
+                return;
+            }
+
+            multiUrlsInput.value = seekJobUrls.join('\n');
+            this._updateMultiStatus(`Copied ${seekJobUrls.length} Seek job URL(s)`, 'success');
+        } catch (error) {
+            this._updateMultiStatus('Error: ' + error.message, 'error');
+        }
     }
 
-    _handleMasterUploadUI() {
+    _handleMasterUploadInterface() {
         // Master upload UI wiring
         if (masterDropzone && masterFileInput) {
             this._loadMasterMetaOnStart();
@@ -489,44 +489,43 @@ class MultipleSeekURLJobExtractor extends JobExtractor {
         }
     };
 
-    _extractFromMultipleURL() {
-        multiExtractBtn.addEventListener('click', async () => {
-            const urlsText = multiUrlsInput.value.trim();
+    _extractFromMultipleURLs() {
+        
+        const urlsText = multiUrlsInput.value.trim();
 
-            if (!urlsText) {
-                this._updateMultiStatus('Please enter at least one job URL', 'error');
-                return;
-            }
+        if (!urlsText) {
+            this._updateMultiStatus('Please enter at least one job URL', 'error');
+            return;
+        }
 
-            const urls = urlsText.split('\n')
-                .map(url => url.trim())
-                .filter(url => url.length > 0);
+        const urls = urlsText.split('\n')
+            .map(url => url.trim())
+            .filter(url => url.length > 0);
 
-            if (urls.length === 0) {
-                this._updateMultiStatus('Please enter valid URLs', 'error');
-                return;
-            }
+        if (urls.length === 0) {
+            this._updateMultiStatus('Please enter valid URLs', 'error');
+            return;
+        }
 
-            const invalidUrls = urls.filter(url => !url.includes('seek.com.au/job'));
-            if (invalidUrls.length > 0) {
-                this._updateMultiStatus(`Found ${invalidUrls.length} invalid URL. Please use Seek job listing URLs.`, 'error');
-                return;
-            }
+        const invalidUrls = urls.filter(url => !url.includes('seek.com.au/job'));
+        if (invalidUrls.length > 0) {
+            this._updateMultiStatus(`Found ${invalidUrls.length} invalid URL. Please use Seek job listing URLs.`, 'error');
+            return;
+        }
 
-            multiExtractBtn.disabled = true;
-            this._updateMultiStatus(`Extracting ${urls.length} job(s)...`, 'loading');
-            this._updateMultiProgress(0);
-            multiDetailsDiv.textContent = "Initializing..."
+        multiExtractBtn.disabled = true;
+        this._updateMultiStatus(`Extracting ${urls.length} job(s)...`, 'loading');
+        this._updateMultiProgress(0);
+        multiDetailsDiv.textContent = "Initializing..."
 
-            extractionErrors = [];
-            errorPreviewSection.style.display = 'none';
-            errorPreviewContent.style.display = 'none';
-            errorToggleIcon.classList.remove('expanded');
+        extractionErrors = [];
+        errorPreviewSection.style.display = 'none';
+        errorPreviewContent.style.display = 'none';
+        errorToggleIcon.classList.remove('expanded');
 
-            chrome.runtime.sendMessage({
-                action: 'startMultiExtraction',
-                urls: urls
-            });
+        chrome.runtime.sendMessage({
+            action: 'startMultiExtraction',
+            urls: urls
         });
     }
 
@@ -850,19 +849,15 @@ class MultipleSeekURLJobExtractor extends JobExtractor {
     }
 }
 
-// Instantiation
-new SingleSeekURLJobExtractor();
-new MultipleSeekURLJobExtractor();
-
-
-
 
 class DataEnricher {
+
     constructor() {
-        super();
         const run = () => {
-            this._copyPasteLinkedinURLs();
-            this._loadAPIKey();
+            this._loadAPIKeyOnStart();
+            this._handleLinkedinURLsOnTextArea();
+            enricherCopyPasteUrlsBtn.addEventListener('click', this._copyPasteLinkedinURLs.bind(this));
+            enrichBtn.addEventListener('click', this._handleLinkedinEnrichment.bind(this));
         };
         if (document.readyState === 'complete' || document.readyState === 'interactive') {
             run();
@@ -870,6 +865,8 @@ class DataEnricher {
             document.addEventListener('DOMContentLoaded', run);
         }
     };
+
+
 
     // Function to validate LinkedIn person profile URL
     _isValidLinkedInProfileUrl(url) {
@@ -879,9 +876,9 @@ class DataEnricher {
         return url.includes('linkedin.com/in/');
     }
 
-    _copyPasteLinkedinURLs(){
-        enricherCopyPasteUrlsBtn.addEventListener('click', async function () {
+    async _copyPasteLinkedinURLs(){
         try {
+
             const tabs = await chrome.tabs.query({ currentWindow: true });
 
             if (tabs.length === 0) {
@@ -892,7 +889,7 @@ class DataEnricher {
 
             const linkedInUrls = tabs
                 .map(tab => tab.url)
-                .filter(url => this_isValidLinkedInProfileUrl(url));
+                .filter(url => this._isValidLinkedInProfileUrl(url));
 
             if (linkedInUrls.length === 0) {
                 enrichmentStatusEl.textContent = 'No LinkedIn profile URLs found in current tabs';
@@ -901,67 +898,44 @@ class DataEnricher {
             }
 
             linkedinUrlsInput.value = linkedInUrls.join('\n');
-            updateLinkedInUrlCount();
+            this._filterLinkedInUrlCount();
             enrichmentStatusEl.textContent = `Copied ${linkedInUrls.length} LinkedIn profile URL(s)`;
             enrichmentStatusEl.className = 'status-message success';
+
         } catch (error) {
+
             enrichmentStatusEl.textContent = 'Error: ' + error.message;
             enrichmentStatusEl.className = 'status-message error';
         }
-    });
     };
 
-    _loadAPIKey(){
+    _loadAPIKeyOnStart(){
 
     // Load saved API keys
-    chrome.storage.local.get(['apolloApiKey', 'findymailApiKey'], function (result) {
-        if (result.apolloApiKey) {
-            apolloApiKeyInput.value = result.apolloApiKey;
-        }
-        if (result.findymailApiKey) {
-            findymailApiKeyInput.value = result.findymailApiKey;
-        }
-    });
+        chrome.storage.local.get(['apolloApiKey', 'findymailApiKey'], function (result) {
+            if (result.apolloApiKey) {
+                apolloApiKeyInput.value = result.apolloApiKey;
+            }
+            if (result.findymailApiKey) {
+                findymailApiKeyInput.value = result.findymailApiKey;
+            }
+        });
 
-    // Save API keys on input
-    apolloApiKeyInput.addEventListener('input', function () {
-        chrome.storage.local.set({ apolloApiKey: apolloApiKeyInput.value });
-    });
+        // Save API keys on input
+        apolloApiKeyInput.addEventListener('input', function () {
+            chrome.storage.local.set({ apolloApiKey: apolloApiKeyInput.value });
+        });
 
-    findymailApiKeyInput.addEventListener('input', function () {
-        chrome.storage.local.set({ findymailApiKey: findymailApiKeyInput.value });
-    });
+        findymailApiKeyInput.addEventListener('input', function () {
+            chrome.storage.local.set({ findymailApiKey: findymailApiKeyInput.value });
+        });
+   
 
     }
-    
 
+    _filterLinkedInUrlCount() {
 
-};
-
-class CopyURLs { };
-
-
-
-document.addEventListener('DOMContentLoaded', function () {
-
-    
-
-//Investigate need of linkedinUrlCount
-
-    // LinkedIn URL validation and count display
-    const linkedinUrlCount = document.createElement('div');
-    linkedinUrlCount.className = 'url-count-display';
-    linkedinUrlCount.style.fontSize = '12px';
-    linkedinUrlCount.style.color = '#666';
-    linkedinUrlCount.style.marginTop = '4px';
-    linkedinUrlsInput.parentElement.appendChild(linkedinUrlCount);
-
-    function updateLinkedInUrlCount() {
         const text = linkedinUrlsInput.value.trim();
-        if (!text) {
-            linkedinUrlCount.textContent = '';
-            return;
-        }
 
         // Filter only LinkedIn URLs
         const urlList = text.split(/[\n,]/)
@@ -973,19 +947,25 @@ document.addEventListener('DOMContentLoaded', function () {
             const filteredText = urlList.join('\n');
             linkedinUrlsInput.value = filteredText;
             chrome.storage.local.set({ linkedinUrls: filteredText });
+            // linkedinUrlsCount.textContent = `Found ${urlList.length} Linkedin URLs`; 
+            // linkedinUrlsCount.className = 'status-message success';
+        };
 
-        }
-    }
+        if(urlList.length === 0 || urlList.length == null) return;
+    };
+    
+    _handleLinkedinURLsOnTextArea(){
 
-    linkedinUrlsInput.addEventListener('input', function () {
+        linkedinUrlsInput.addEventListener('input', ()=> {
         chrome.storage.local.set({ linkedinUrls: linkedinUrlsInput.value });
-        updateLinkedInUrlCount();
+        this._filterLinkedInUrlCount();
     });
+    };
+    
+    async _handleLinkedinEnrichment(){
 
-
-    enrichBtn.addEventListener('click', async function () {
-
-        //Checking existence of apollo api, findymail api and linkedin URLs
+        
+        // Double check Both API are there
 
         const apolloKey = apolloApiKeyInput.value.trim();
         const findymailKey = findymailApiKeyInput.value.trim();
@@ -1000,37 +980,38 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!findymailKey) {
             enrichmentStatusEl.textContent = 'Please enter Findymail API Key';
             enrichmentStatusEl.className = 'status-message error';
-        }
-
-        if (!urls) {
-            enrichmentStatusEl.textContent = 'Please enter LinkedIn URLs';
-            enrichmentStatusEl.className = 'status-message error';
             return;
         }
 
-        enrichBtn.disabled = true;
-        enrichmentStatusEl.textContent = 'Starting enrichment...';
-        enrichmentStatusEl.className = 'status-message loading';
+            enrichBtn.disabled = true;
+            enrichmentStatusEl.textContent = 'Starting enrichment...';
+            enrichmentStatusEl.className = 'status-message loading';
 
-        try {
-            await processLinkedInUrls(urls, apolloKey, findymailKey);
-        } catch (error) {
-            enrichmentStatusEl.textContent = 'Error: ' + error.message;
-            enrichmentStatusEl.className = 'status-message error';
-        } finally {
-            enrichBtn.disabled = false;
-        }
-    });
+            try {
 
-    // ============================================================================
-    // COPY URLs TOOL
-    // ============================================================================
-    const urlsTextarea = document.getElementById('urlsTextarea');
-    const copyUrlsBtn = document.getElementById('copyUrlsBtn');
-    const pasteUrlsBtn = document.getElementById('pasteUrlsBtn');
-    const copyStatusEl = document.getElementById('copyStatus');
+                await processLinkedInUrls(urls, apolloKey, findymailKey);
 
-    copyUrlsBtn.addEventListener('click', async function () {
+            } catch (error) {
+
+                enrichmentStatusEl.textContent = 'Error: ' + error.message;
+                enrichmentStatusEl.className = 'status-message error';
+
+            } finally {
+                enrichBtn.disabled = false;
+            }
+        };
+    
+};
+
+class CopyURLs {
+
+    constructor(){
+        copyUrlsBtn.addEventListener('click', this._copyAllTabsURLs.bind(this));
+        pasteUrlsBtn.addEventListener('click', this._pasteAllTabsURLs.bind(this));
+    };
+
+    async _copyAllTabsURLs(){
+        
         try {
             const tabs = await chrome.tabs.query({ currentWindow: true });
             if (tabs.length === 0) {
@@ -1053,9 +1034,10 @@ document.addEventListener('DOMContentLoaded', function () {
             copyStatusEl.textContent = 'Error: ' + error.message;
             copyStatusEl.className = 'status-message error';
         }
-    });
+    };
 
-    pasteUrlsBtn.addEventListener('click', async function () {
+    async _pasteAllTabsURLs(){
+
         const text = urlsTextarea.value.trim();
         if (!text) {
             copyStatusEl.textContent = 'No URLs in text box. Copy URLs first or paste some.';
@@ -1078,5 +1060,12 @@ document.addEventListener('DOMContentLoaded', function () {
             copyStatusEl.textContent = 'Error opening URLs: ' + error.message;
             copyStatusEl.className = 'status-message error';
         }
-    });
-});
+    };
+};
+
+// Instantiation
+new SingleSeekURLJobExtractor();
+new MultipleSeekURLJobExtractor();
+new DataEnricher();
+new CopyURLs();
+
