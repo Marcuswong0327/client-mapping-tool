@@ -231,11 +231,27 @@ function getActualPostedDate(postedString) {
     const trimmed = postedString.trim();
     const now = new Date();
 
-    const dayMatch = trimmed.match(/Posted\s+(\d+)\s*(d)\s+ago/) || trimmed.match(/Posted\s+(\d+)(d)\s+ago/);
-    if (dayMatch) {
-        const num = parseInt(dayMatch[1], 10);
-        now.setDate(now.getDate() - num);
-        return now.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    const match = trimmed.match(/Posted\s+(\d+)\s*(d||h||mo)\s+ago/) || trimmed.match(/Posted\s+(\d+)(d||h||mo)\s+ago/);
+    
+    if (match) {
+        
+        const dateUnit = match[2].trim();
+        
+        if(dateUnit === 'd'){
+            const num = parseInt(match[1], 10);
+            now.setDate(now.getDate() - num);
+            return now.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        }
+
+        if(dateUnit === 'h'){
+            return now.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        }
+
+        if(dateUnit === 'mo'){
+            now.setDate(now.getDate() - 30);
+            return now.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        }
+        
     }
    
     return trimmed;
@@ -371,7 +387,7 @@ function extractSingleJobPageData() { //for multiple URLs extraction logic
         const spans = jobView.querySelectorAll('span, p, div');
         for (const el of spans) {
             const t = (el.textContent || '').trim();
-            if (/^Posted\s+\d+\s*d\s+ago/.test(t)) {
+            if (/^Posted\s+\d+\s*(d||h||mo)\s+ago/.test(t)) {
                 rawDateText = t;
                 break;
             }
