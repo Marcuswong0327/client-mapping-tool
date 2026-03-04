@@ -225,11 +225,13 @@ function extractJobFromCard(card, website, cardIndex) {
 
 
 function getActualPostedDate(postedString) {
+
     if (!postedString || typeof postedString !== 'string') return '';
+
     const trimmed = postedString.trim();
     const now = new Date();
 
-    const dayMatch = trimmed.match(/Posted\s+(\d+)\s*d(?:ay)?s?\s*ago/i) || trimmed.match(/Posted\s+(\d+)d\s*ago/i);
+    const dayMatch = trimmed.match(/Posted\s+(\d+)\s*(d)\s+ago/) || trimmed.match(/Posted\s+(\d+)(d)\s+ago/);
     if (dayMatch) {
         const num = parseInt(dayMatch[1], 10);
         now.setDate(now.getDate() - num);
@@ -252,7 +254,7 @@ function getJobDescriptionContainer() {
     ];
     for (const selector of selectors) {
         const jobDescriptionEl = document.querySelector(selector);
-        if (jobDescriptionEl && jobDescriptionEl.textContent && jobDescriptionEl.textContent.trim().length > 20) {
+        if (jobDescriptionEl && jobDescriptionEl.textContent) {
             return jobDescriptionEl;
         }
     }
@@ -268,7 +270,7 @@ function extractEmailFromText(text) {
     return match ? match[0] : '';
 }
 
-function extractSingleJobPageData() {
+function extractSingleJobPageData() { //for multiple URLs extraction logic
     console.log('Extracting job data from:', window.location.href);
 
     const jobData = {
@@ -282,20 +284,32 @@ function extractSingleJobPageData() {
         url: window.location.href
     };
 
+    // small helper function - testing title first
+    const getTargetDataValue = (selectorsArray) => {
+        
+        for (const selector of selectorsArray) {
+
+            const element = document.querySelector(selector);
+            
+            if(element){
+                return element.textContent.trim();
+            }
+        }
+
+        return null;
+    }
+
+    
+
     const titleSelectors = [
         'h1[data-automation="job-detail-title"]',
         'h1.job-title',
         '[data-testid="job-title"]',
         'h1'
     ];
-    for (const selector of titleSelectors) {
-        const element = document.querySelector(selector);
-        if (element && element.textContent?.trim()) {
-            jobData.jobTitle = element.textContent.trim();
-            console.log('Found title:', jobData.jobTitle);
-            break;
-        }
-    }
+
+    jobData.jobTitle = getTargetDataValue(titleSelectors);
+
 
     const companySelectors = [
         '[data-automation="advertiser-name"]',
@@ -303,13 +317,10 @@ function extractSingleJobPageData() {
         '[data-testid="advertiser-name"]',
         '.advertiser-name'
     ];
-    for (const selector of companySelectors) {
-        const element = document.querySelector(selector);
-        if (element && element.textContent?.trim()) {
-            jobData.company = element.textContent.trim();
-            break;
-        }
-    }
+
+    jobData.company = getTargetDataValue(companySelectors);
+
+
 
     const locationSelectors = [
         '[data-automation="job-detail-location"]',
@@ -317,25 +328,23 @@ function extractSingleJobPageData() {
         '[data-testid="job-detail-location"]',
         '.location-info'
     ];
-    for (const selector of locationSelectors) {
-        const element = document.querySelector(selector);
-        if (element && element.textContent?.trim()) {
-            const locationText = element.textContent.trim();
-            const parts = locationText.split(',').map(p => p.trim());
 
-            if (parts.length >= 2) {
-                jobData.suburbs = parts[0];
-                const statePart = parts[1];
-                if (statePart.includes('NSW')) jobData.state = 'Sydney (NSW)';
-                else if (statePart.includes('VIC')) jobData.state = 'Melbourne (VIC)';
-                else if (statePart.includes('QLD')) jobData.state = 'Brisbane (QLD)';
-                else jobData.state = statePart;
-            } else if (parts.length === 1) {
-                jobData.suburbs = parts[0];
-            }
-            break;
-        }
+    const location = getTargetDataValue(locationSelectors);
+    const parts = location.split(',').map(p => p.trim());
+    
+    if(parts.length >=2){
+        jobData.suburbs = parts[0];
+        const statePart = parts[1];
+
+        if(statePart.includes('NSW')) jobData.state = 'Sydney (NSW)';
+        if(statePart.includes('VIC')) jobData.state = 'Melbourne (VIC)';
+        if(statePart.includes('QLD')) jobData.state = 'Brisbane (QLD)';
     }
+
+    if(parts.length ===1){
+        jobData.state = parts[0];
+    };
+
 
     const salarySelectors = [
         '[data-automation="job-detail-salary"]',
@@ -343,13 +352,9 @@ function extractSingleJobPageData() {
         '[data-testid="job-salary"]',
         '.salary-info'
     ];
-    for (const selector of salarySelectors) {
-        const element = document.querySelector(selector);
-        if (element && element.textContent?.trim()) {
-            jobData.salary = element.textContent.trim();
-            break;
-        }
-    }
+
+    jobData.salary = getTargetDataValue(salarySelectors);
+
 
     const dateSelectors = [
         'span[data-automation="job-detail-date"]',
@@ -358,24 +363,21 @@ function extractSingleJobPageData() {
         '.posted-date'
     ];
     let rawDateText = '';
-    for (const selector of dateSelectors) {
-        const element = document.querySelector(selector);
-        if (element && element.textContent?.trim()) {
-            rawDateText = element.textContent.trim();
-            break;
-        }
-    }
+
+    rawDateText = getTargetDataValue(dateSelectors);
+    
     if (!rawDateText) {
         const jobView = document.querySelector('[data-automation="job-view-container"]') || document.body;
         const spans = jobView.querySelectorAll('span, p, div');
         for (const el of spans) {
             const t = (el.textContent || '').trim();
-            if (/^Posted\s+\d+\s*(d|days?|hours?|weeks?|months?)\s*ago/i.test(t)) {
+            if (/^Posted\s+\d+\s*d\s+ago/.test(t)) {
                 rawDateText = t;
                 break;
             }
         }
     }
+
     jobData.postedDate = getActualPostedDate(rawDateText) || rawDateText || '';
 
     // Contact email: search within job listing (scoped description) only
@@ -388,15 +390,17 @@ function extractSingleJobPageData() {
     return jobData;
 }
 
-// ========================
+///////////////////////////////////////////////////////////////
 // Job Markdown Extraction (summary job data + job description)
-//=========================
+//////////////////////////////////////////////////////////////
+
 function extractJobPageDataWithMarkdown() {
     const summaryJobData = extractSingleJobPageData();
 
     const jobDescriptionEl = getJobDescriptionContainer();        
     const jobDescriptionHtml = jobDescriptionEl ?? '';
 
+    //markdown lib
     const turndownService = new TurndownService({
         headingStyle: 'atx',
         bulletListMarker: '-'
@@ -416,6 +420,7 @@ function extractJobPageDataWithMarkdown() {
 
 
 function scrapeSeekJobs() {
+
     const jobs = [];
     const jobCards = document.querySelectorAll('article[data-testid="job-card"], [data-automation="normalJob"], [data-testid="job-result"], div[data-card-type="JobCard"], .job-card, article');
 
