@@ -166,7 +166,7 @@ class JobExtractor {
 
             } else if (request.action === 'multiExtractionProgress') {
 
-                const { current, total, results, errors } = request.progress;
+                const { current, total, results} = request.progress;
                 const percentage = (current / total) * 100;
 
                 this._updateMultiProgress(percentage);
@@ -185,16 +185,27 @@ class JobExtractor {
 
                 multiDetailsDiv.textContent = `Extracted ${request.results.length} | Error: ${request.errors.length}`;
                 multiExtractBtn.disabled = false;
+                
 
-                if (typeof this._exportJobsWithStakeholders === 'function' && request.results.length > 0 && !isExporting) {
+                if (typeof(this._exportJobsWithStakeholders) === 'function' && request.results.length > 0 && !isExporting) {
+                    
                     isExporting = true;
+
                     setTimeout(async () => {
+
                         try {
+
                             await this._exportJobsWithStakeholders(request.results);
+
                         } catch (error) {
-                            console.error('Auto-export failed:', error);
-                            this._updateMultiStatus('Auto-export failed: ' + error.message, 'error');
+                            console.error('Stakeholder enrichment failed:', error.message);
+
+                            // const gistMessage = request.action === 'Handle Invalid GitHub Token'? request.message : '';
+                            this._updateMultiStatus(`Stakeholder enrichment failed. ${error.message}` , 'loading');
+                            this._exportMultiToExcel(request.results);
+
                         } finally {
+
                             isExporting = false;
                         }
                     }, 500);
@@ -335,7 +346,7 @@ class MultipleSeekURLJobExtractor extends JobExtractor {
             this._loadMasterMetaOnStart();
             this._loadGistsToken();
             copyPasteUrlsBtn.addEventListener('click', this._copyMultipleSeekJobURLs.bind(this));
-            multiExtractBtn.addEventListener('click', this._extractFromMultipleURLs.bind(this));
+            multiExtractBtn.addEventListener('click', this._handleMultiExtraction.bind(this));
             this._displayFailedMultipleURL();
             this._handleFailedMultipleURL();
         };
@@ -416,7 +427,7 @@ class MultipleSeekURLJobExtractor extends JobExtractor {
         }
     };
 
-    _loadGistsToken() { //if any
+    _loadGistsToken() {
         if (githubGistTokenInput) {
             chrome.storage.local.get(['githubGistToken'], function (result) {
                 if (result.githubGistToken) {
@@ -429,6 +440,7 @@ class MultipleSeekURLJobExtractor extends JobExtractor {
             });
         }
     };
+
 
     async _copyMultipleSeekJobURLs() {
 
@@ -491,44 +503,65 @@ class MultipleSeekURLJobExtractor extends JobExtractor {
         }
     };
 
-    _extractFromMultipleURLs() {
+    async _handleMultiExtraction(){ //checking existence of github token before start extracting
+
+        const githubToken = githubGistTokenInput.value.trim(); 
+
+        if(!githubToken){
+            this._updateMultiStatus('Please enter Github Token at the bottom', 'error');
+            return;
+        }
+
+        try{
+
+            await this._extractFromMultipleURLs();
+
+        }catch(error){
+
+            this._updateMultiStatus('Error ', error.message);
+        }
+
+    };
+
+    async _extractFromMultipleURLs() {
         
-        const urlsText = multiUrlsInput.value.trim();
+            const urlsText = multiUrlsInput.value.trim();
 
-        if (!urlsText) {
-            this._updateMultiStatus('Please enter at least one job URL', 'error');
-            return;
-        }
+            if (!urlsText) {
+                this._updateMultiStatus('Please enter at least one job URL', 'error');
+                return;
+            }
 
-        const urls = urlsText.split('\n')
-            .map(url => url.trim())
-            .filter(url => url.length > 0);
+            const urls = urlsText.split('\n')
+                .map(url => url.trim())
+                .filter(url => url.length > 0);
 
-        if (urls.length === 0) {
-            this._updateMultiStatus('Please enter valid URLs', 'error');
-            return;
-        }
+            if (urls.length === 0) {
+                this._updateMultiStatus('Please enter valid URLs', 'error');
+                return;
+            }
 
-        const invalidUrls = urls.filter(url => !url.includes('seek.com.au/job'));
-        if (invalidUrls.length > 0) {
-            this._updateMultiStatus(`Found ${invalidUrls.length} invalid URL. Please use Seek job listing URLs.`, 'error');
-            return;
-        }
+            //if user input invalid seek job url, will flag this
+            const invalidUrls = urls.filter(url => !url.includes('seek.com.au/job'));
+            if (invalidUrls.length > 0) {
+                this._updateMultiStatus(`Found ${invalidUrls.length} invalid URL. Please use Seek job listing URLs.`, 'error');
+                return;
+            }
 
-        multiExtractBtn.disabled = true;
-        this._updateMultiStatus(`Extracting ${urls.length} job(s)...`, 'loading');
-        this._updateMultiProgress(0);
-        multiDetailsDiv.textContent = "Initializing..."
+            multiExtractBtn.disabled = true;
+            this._updateMultiStatus(`Extracting ${urls.length} job(s)...`, 'loading');
+            this._updateMultiProgress(0);
+            multiDetailsDiv.textContent = "Initializing..."
 
-        extractionErrors = [];
-        errorPreviewSection.style.display = 'none';
-        errorPreviewContent.style.display = 'none';
-        errorToggleIcon.classList.remove('expanded');
+            extractionErrors = [];
+            errorPreviewSection.style.display = 'none';
+            errorPreviewContent.style.display = 'none';
+            errorToggleIcon.classList.remove('expanded');
 
-        chrome.runtime.sendMessage({
-            action: 'startMultiExtraction',
-            urls: urls
-        });
+            chrome.runtime.sendMessage({
+                action: 'startMultiExtraction',
+                urls: urls
+            });
     }
 
     _displayFailedMultipleURL() {
@@ -572,41 +605,44 @@ class MultipleSeekURLJobExtractor extends JobExtractor {
         });
     };
 
-    // _exportMultiToExcel(jobs) { //without stakeholders enriched
-    //     if (jobs.length === 0) return;
+    _exportMultiToExcel(jobs) { //proceed this function if no master file upload. 
+        if (jobs.length === 0) return;
 
-    //     const headers = ['State', 'Suburbs', 'Job Title', 'Company Name', 'Salary', 'Posted Date', 'Contact Email', 'URL'];
-    //     const csvContent = [
-    //         headers.join(','),
-    //         ...jobs.map(job => [
-    //             `"${this._normalizeText(job.state || '').replace(/"/g, '""')}"`,
-    //             `"${this._normalizeText(job.suburbs || '').replace(/"/g, '""')}"`,
-    //             `"${this._normalizeText(job.jobTitle || '').replace(/"/g, '""')}"`,
-    //             `"${this._normalizeText(job.company || '').replace(/"/g, '""')}"`,
-    //             `"${this._normalizeText(job.salary || '').replace(/"/g, '""')}"`,
-    //             `"${this._normalizeText(job.postedDate || '').replace(/"/g, '""')}"`,
-    //             `"${this._normalizeText(job.contactEmail || '').replace(/"/g, '""')}"`,
-    //             `"${job.url || ''}"`
-    //         ].join(','))
-    //     ].join('\n');
+        const headers = ['State', 'Suburbs', 'Job Title', 'Company Name', 'Salary', 'Posted Date', 'Contact Email', 'URL'];
+        const csvContent = [
+            headers.join(','),
+            ...jobs.map(job => [
+                `"${this._normalizeText(job.state || '').replace(/"/g, '""')}"`,
+                `"${this._normalizeText(job.suburbs || '').replace(/"/g, '""')}"`,
+                `"${this._normalizeText(job.jobTitle || '').replace(/"/g, '""')}"`,
+                `"${this._normalizeText(job.company || '').replace(/"/g, '""')}"`,
+                `"${this._normalizeText(job.salary || '').replace(/"/g, '""')}"`,
+                `"${this._normalizeText(job.postedDate || '').replace(/"/g, '""')}"`,
+                `"${this._normalizeText(job.contactEmail || '').replace(/"/g, '""')}"`,
+                `"${job.url || ''}"`
+            ].join(','))
+        ].join('\n');
 
-    //     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    //     const filename = `seek_job_data.csv`;
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const filename = `seek_job_data.csv`;
+        const self = this;
 
-    //     const url = URL.createObjectURL(blob)
-    //     chrome.downloads.download({
-    //         url: url,
-    //         filename: filename,
-    //         saveAs: false
-    //     }, function (downloadId) {
-    //         if (chrome.runtime.lastError) {
-    //             this._updateMultiStatus('Export failed: ' + chrome.runtime.lastError.message, 'error');
-    //         } else {
-    //             this._updateMultiStatus(`Downloaded ${jobs.length} jobs`, 'success');
-    //         }
-    //         URL.revokeObjectURL(url);
-    //     });
-    // }
+        const url = URL.createObjectURL(blob)
+        chrome.downloads.download({
+            url: url,
+            filename: filename,
+            saveAs: false
+        }, function (downloadId) {
+
+            // if (chrome.runtime.lastError) {
+            //     self._updateMultiStatus('Export failed: ' + chrome.runtime.lastError.message, 'error');
+            // } else {
+            //     self._updateMultiStatus(`Downloaded ${jobs.length} jobs`, 'success');
+            // }
+
+            URL.revokeObjectURL(url);
+        });
+    }
 
     _cleanCompanyNameForMatch(name) {
         if (!name || name.length === 0) return '';
@@ -783,6 +819,7 @@ class MultipleSeekURLJobExtractor extends JobExtractor {
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const filename = 'seek_job_with_stakeholders.csv';
 
+
         const url = URL.createObjectURL(blob);
         const self = this;
         chrome.downloads.download({
@@ -790,36 +827,34 @@ class MultipleSeekURLJobExtractor extends JobExtractor {
             filename: filename,
             saveAs: false
         }, function (downloadId) {
+
             if (chrome.runtime.lastError) {
                 self._updateMultiStatus('Export failed: ' + chrome.runtime.lastError.message, 'error');
             } else {
                 self._updateMultiStatus('Download complete', 'success');
             }
+
             URL.revokeObjectURL(url);
         });
     }
 
     async _exportJobsWithStakeholders(jobs) {
-        try {
-
+        
             this._updateMultiStatus('Merging stakeholder info from uploaded master...', 'loading');
             const { masterValues } = await chrome.storage.local.get(['masterValues']);
 
             if (!Array.isArray(masterValues) || masterValues.length < 2) {
-                throw new Error('No master file uploaded. Please upload your master Excel first.');
+                throw new Error('No master file uploaded. But Job Listing Download Success.');
             }
 
             const jobValues = this._buildJobListingMatrixFromJobs(jobs);
             const mergedMatrix = this._mergeJobsWithStakeholders(masterValues, jobValues);
             this._exportStakeholderEnrichedCsv(mergedMatrix);
 
-        } catch (error) {
+            //this._exportMultiToExcel(jobs);
+         
+    };
 
-            console.error('Stakeholder enrichment failed:', error);
-            this._updateMultiStatus('Stakeholder enrichment failed. Please double check your master file and job listing data.', 'loading');
-            //this._exportMultiToExcel(jobs); 
-        };
-    }
 
     _displayErrorPreview(errors) {
         if (!errors || errors.length === 0) {

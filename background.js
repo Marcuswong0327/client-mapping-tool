@@ -416,19 +416,24 @@ function getJobFromContentScript(tabId) {
             tabId,
             { action: 'extractJobMarkdown' },
             (response) => {
+
                 if (chrome.runtime.lastError) {
                     reject(new Error(chrome.runtime.lastError.message));
                     return;
                 }
+
                 if (!response || !response.success) {
                     reject(new Error((response && response.error) ? response.error.message : 'No response from content script'));
                     return;
                 }
+
                 const job = response.markdownJobData ?? null;
+
                 if (!job) {
                     reject(new Error('Content script returned no job data'));
                     return;
                 }
+
                 resolve(job);
             }
         );
@@ -494,15 +499,24 @@ async function extractSingleJob(url, index) {
         const rawData = await attemptExtraction();
         let finalData = { ...rawData };
 
+
         try {
+
             finalData = await jobGistService.attachGistUrl(finalData);
+
         } catch (gistError) {
+
             console.error(`[${index}] Gist creation failed:`, gistError);
-            finalData.gistError = gistError.message;
+
             // Ensure we always have at least the original Seek URL
             if (!finalData.url && rawData && rawData.url) {
                 finalData.url = rawData.url;
             }
+
+            chrome.runtime.sendMessage({
+                action: "Handle Invalid GitHub Token",
+                message: gistError.message
+            });
         }
 
         cleanup();

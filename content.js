@@ -411,6 +411,7 @@ function extractSingleJobPageData() { //for multiple URLs extraction logic
 //////////////////////////////////////////////////////////////
 
 function extractJobPageDataWithMarkdown() {
+
     const summaryJobData = extractSingleJobPageData();
 
     const jobDescriptionEl = getJobDescriptionContainer();        
@@ -559,32 +560,43 @@ async function scrapeAllPages() {
 }
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    
     if (request.action === 'startScraping') {
         scrapeAllPages();
         sendResponse({ success: true });
+
     } else if (request.action === 'getJobs') {
         sendResponse({ jobs: allJobs });
+
     } else if (request.action === 'extractJobData') {
         console.log('Received extractJobData request for URL:', request.url);
         try {
             const jobData = extractSingleJobPageData();
             console.log('Sending extracted data back to background:', jobData);
+
             chrome.runtime.sendMessage({
                 action: 'jobDataExtracted',
                 data: jobData
             });
+
             sendResponse({ success: true, data: jobData });
+
         } catch (error) {
             console.error('Error extracting job data:', error);
             sendResponse({ success: false, error: error.message });
         }
+
     } else if (request.action === 'extractJobMarkdown') {
+
         try {
             const markdownJobData = extractJobPageDataWithMarkdown();
             sendResponse({ success: true, markdownJobData});
+
         } catch (error) {
+
             console.error('Error extracting job with markdown:', error);
             sendResponse({ success: false, error: error.message });
+
         }
     }
     return true;
